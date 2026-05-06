@@ -1,12 +1,14 @@
 """
 @module  : graphs/graph_synthese.py
 @author  : Philippe PETIT
-@version : 1.0.0
+@version : 3.4.0
 @description : Graphiques de synthèse de l'artificialisation
+               Version dynamique basée sur les suffixes CEREMA
 """
 
 import plotly.graph_objects as go
 import streamlit as st
+
 
 # ─── Palette couleurs par catégorie ─────────────────────────────────────────
 COULEURS = {
@@ -21,61 +23,90 @@ COULEURS = {
 CATEGORIES = ["Activité", "Habitat", "Mixte", "Inconnu", "Route", "Ferroviaire"]
 KEYS       = ["activity", "habitat", "mixte", "inconnu", "route", "ferroviaire"]
 
-# Correspondance index → année réelle
-INDEX_TO_YEAR = {
-    3: 2011, 4: 2012, 5: 2013, 6: 2014, 7: 2015,
-    8: 2016, 9: 2017, 10: 2018, 11: 2019, 12: 2020,
-    13: 2021, 14: 2022, 15: 2023,
-}
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  UTILITAIRES
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _m2_to_ha(valeur):
-    """Convertit des m² en hectares en gérant les chaînes, None, etc."""
-    if valeur is None:
+    try:
+        return round(float(str(valeur).replace(",", ".")) / 10_000, 2)
+    except Exception:
         return 0.0
-    if isinstance(valeur, (int, float)):
-        return round(valeur / 10_000, 2)
-    if isinstance(valeur, str):
-        v = valeur.replace(",", ".").strip()
-        try:
-            return round(float(v) / 10_000, 2)
-        except ValueError:
-            return 0.0
-    return 0.0
 
 
+def _build_flux_structure(donnees):
+    """
+    Construit la structure dynamique des flux à partir des suffixes CEREMA.
+    On ignore automatiquement les flux < 2011.
+    """
 
-def _fmt(valeur):
-    """Formate un nombre avec séparateur de milliers (espace)."""
-    return f"{valeur:,.2f}".replace(",", " ").replace(".", ",")
+    suffixes = donnees["suffixes_ref"] + donnees["suffixes_zan"]
+
+    # On filtre les flux avant 2011
+    suffixes = [(a, b) for (a, b) in suffixes if int(a) >= 11]
+
+    # Année = 2000 + int(a)
+    years = [2000 + int(a) for (a, b) in suffixes]
+
+    # Labels flux : "2011–2012"
+    flux_labels = [f"{2000+int(a)}–{2000+int(b)}" for (a, b) in suffixes]
+
+    # Indices internes (3,4,5...) utilisés dans donnees["habitat"]
+    # On doit retrouver l’index correspondant à chaque suffixe
+    indices = []
+    for (a, b) in suffixes:
+        # On cherche l’index interne où se trouve artAA...BB
+        for idx, val in donnees["habitat"].items():
+            if isinstance(idx, int):
+                # On reconstruit la clé attendue
+                key = f"art{a}hab{b}"
+                # Si la valeur existe dans la ligne, c’est le bon index
+                if key in donnees["habitat"]:
+                    pass
+        # Mais lire_les_donnees remplit les flux dans l’ordre :
+        # index 3 = premier suffixe
+        # index 4 = deuxième suffixe
+        # etc.
+        # Donc on peut simplement faire :
+        indices = list(range(3, 3 + len(suffixes)))
+
+    return indices, years, flux_labels
 
 
-# ─── Graphique 1 : Barres empilées par année ────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+#  GRAPHIQUE 1 : Barres empilées annuelles
+# ─────────────────────────────────────────────────────────────────────────────
 
 def graph_barres_annuelles(donnees: dict) -> go.Figure:
-    """
-    Barres empilées : consommation annuelle par catégorie (en ha).
-    """
-    annees = list(INDEX_TO_YEAR.values())
+
+    indices, years, flux_labels = _build_flux_structure(donnees)
 
     fig = go.Figure()
 
     for label, key in zip(CATEGORIES, KEYS):
         d = donnees[key]
-        valeurs = [_m2_to_ha(d.get(idx, 0)) for idx in INDEX_TO_YEAR.keys()]
+        valeurs = [_m2_to_ha(d.get(idx, 0)) for idx in indices]
 
         fig.add_trace(go.Bar(
             name=label,
-            x=annees,
+            x=years,
             y=valeurs,
+            customdata=flux_labels,
             marker_color=COULEURS[label],
-            hovertemplate=f"<b>{label}</b><br>Année : %{{x}}<br>Surface : %{{y:,.2f}} ha<extra></extra>",
+            hovertemplate=(
+                f"<b>{label}</b><br>"
+                "Flux : %{customdata}<br>"
+                "Année de début : %{x}<br>"
+                "Surface : %{y:,.2f} ha"
+                "<extra></extra>"
+            ),
         ))
 
     fig.update_layout(
         barmode="stack",
         title="Consommation foncière annuelle par catégorie (ha)",
-        xaxis=dict(title="Année", tickmode="linear", dtick=1),
+        xaxis=dict(title="Flux CEREMA (année de début)", tickmode="linear", dtick=1),
         yaxis=dict(title="Surface (ha)"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         plot_bgcolor="rgba(0,0,0,0)",
@@ -88,20 +119,22 @@ def graph_barres_annuelles(donnees: dict) -> go.Figure:
     return fig
 
 
-# ─── Graphique 2 : Camembert par catégorie (total) ──────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+#  GRAPHIQUE 2 : Camembert total
+# ─────────────────────────────────────────────────────────────────────────────
+
 def graph_camembert(donnees: dict) -> go.Figure:
-    """
-    Camembert : répartition totale par catégorie (en ha).
-    """
+
     labels = []
     values = []
 
     for label, key in zip(CATEGORIES, KEYS):
-        # Conversion robuste des valeurs AVANT sum()
-        total_m2 = sum(
-            float(str(v).replace(",", ".") or 0)
-            for v in donnees[key].values()
-        )
+        total_m2 = 0.0
+        for v in donnees[key].values():
+            try:
+                total_m2 += float(str(v).replace(",", "."))
+            except Exception:
+                continue
         total_ha = _m2_to_ha(total_m2)
 
         if total_ha > 0:
@@ -129,20 +162,18 @@ def graph_camembert(donnees: dict) -> go.Figure:
     return fig
 
 
-# ─── Rendu Streamlit complet ─────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+#  Rendu Streamlit
+# ─────────────────────────────────────────────────────────────────────────────
 
 def rendu_graph_synthese(donnees: dict):
-    """
-    Affiche les deux graphiques de synthèse dans Streamlit.
-    """
+
     st.markdown("#### 📊 Visualisation graphique")
 
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        fig_barres = graph_barres_annuelles(donnees)
-        st.plotly_chart(fig_barres, use_container_width=True)
+        st.plotly_chart(graph_barres_annuelles(donnees), use_container_width=True)
 
     with col2:
-        fig_camembert = graph_camembert(donnees)
-        st.plotly_chart(fig_camembert, use_container_width=True)
+        st.plotly_chart(graph_camembert(donnees), use_container_width=True)
