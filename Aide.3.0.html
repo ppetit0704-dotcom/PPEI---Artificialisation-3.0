@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Notice d'utilisation - PPEI Artificialisation</title>
+
+<style>
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f6f9;
+    color: #2c3e50;
+}
+
+/* PAGE DE GARDE */
+.cover {
+    background: linear-gradient(135deg, #1f4e79, #2c6faa);
+    color: white;
+    padding: 120px 40px;
+    text-align: center;
+}
+.cover h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+.cover h2 {
+    font-size: 18px;
+    opacity: 0.9;
+    margin-bottom: 40px;
+}
+.cover .meta {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* SOMMAIRE */
+.toc {
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.toc h2 {
+    color: #1f4e79;
+    margin-bottom: 20px;
+}
+.toc a {
+    display: block;
+    padding: 6px 0;
+    color: #1f4e79;
+    text-decoration: none;
+    font-size: 15px;
+}
+.toc a:hover {
+    text-decoration: underline;
+}
+
+/* SECTIONS */
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.section { margin-bottom: 48px; }
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(90deg, #1f4e79, #2c6faa);
+    color: white;
+    padding: 14px 22px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+.section-title h2 { color: white; margin: 0; font-size: 18px; }
+.section-num {
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0;
+}
+
+.alert {
+    background: #fff3cd;
+    border-left: 6px solid #ffc107;
+    padding: 20px;
+    margin-bottom: 24px;
+    border-radius: 0 8px 8px 0;
+}
+
+.card {
+    background: #f8fafc;
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border-left: 3px solid #2c6faa;
+}
+
+/* PRINT */
+@media print {
+    .cover { page-break-after: always; }
+    .toc { page-break-after: always; }
+    .container { box-shadow: none; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- PAGE DE GARDE -->
+<div class="cover">
+    <h1>PPEI – Tableau de bord Artificialisation</h1>
+    <h2>Notice d'utilisation officielle</h2>
+    <div class="meta">
+        Auteur : Philippe PETIT • Version 3.0 • Document PDF généré automatiquement
+    </div>
+</div>
+
+<!-- SOMMAIRE -->
+<div class="toc">
+    <h2>📑 Sommaire</h2>
+    <a href="#preamble">1. Préambule indispensable</a>
+    <a href="#objectifs">2. Objectifs de l'application</a>
+    <a href="#analyse-structure">3. Analyse automatique du fichier CEREMA</a>
+    <a href="#prise-en-main">4. Prise en main</a>
+    <a href="#onglets">5. Lecture des onglets</a>
+    <a href="#ratios">6. Ratios analytiques</a>
+    <a href="#zan">7. Indicateurs ZAN</a>
+    <a href="#bonnes-pratiques">8. Bonnes pratiques</a>
+    <a href="#limites">9. Limites</a>
+    <a href="#assistance">10. Assistance</a>
+</div>
+
+<div class="container">
+
+<!-- SECTION 1 — PREAMBULE -->
+<div class="section" id="preamble">
+    <div class="section-title">
+        <div class="section-num">1</div>
+        <h2>📌 Préambule indispensable</h2>
+    </div>
+
+    <div class="alert">
+        <strong>Avant toute utilisation :</strong><br><br>
+        1. Télécharger les données officielles depuis l'Observatoire de l'artificialisation des sols.<br>
+        2. Enregistrer le fichier CSV sur votre ordinateur.<br>
+        3. Charger ce fichier dans l'application via la barre latérale.<br><br>
+        ⚠️ L'application ne contient aucune donnée intégrée : elle fonctionne uniquement avec les données que vous fournissez.
+    </div>
+</div>
+
+<!-- SECTION 2 — OBJECTIFS -->
+<div class="section" id="objectifs">
+    <div class="section-title">
+        <div class="section-num">2</div>
+        <h2>🎯 Objectifs de l'application</h2>
+    </div>
+
+    <p>Cette application permet :</p>
+    <ul style="margin-top:10px; line-height:2;">
+        <li>D'analyser l'évolution de l'artificialisation des sols à trois échelles : <strong>commune, EPCI/CC, SCoT</strong></li>
+        <li>D'aider à la prise de décision dans le cadre de la loi ZAN</li>
+        <li>D'objectiver les politiques d'aménagement avec des ratios analytiques</li>
+        <li>De rendre les données accessibles aux élus et aux citoyens</li>
+        <li>De produire des rapports PDF professionnels</li>
+    </ul>
+</div>
+
+<!-- SECTION 3 — ANALYSE AUTOMATIQUE DU FICHIER CEREMA -->
+<div class="section" id="analyse-structure">
+    <div class="section-title">
+        <div class="section-num">3</div>
+        <h2>⚙️ Analyse automatique du fichier CEREMA</h2>
+    </div>
+
+    <p>
+        Les fichiers fournis par le <strong>CEREMA</strong> évoluent chaque année : nouveaux millésimes, colonnes renommées,
+        catégories modifiées…  
+        Pour garantir une compatibilité totale, l’application analyse automatiquement la structure du fichier CSV
+        avant toute utilisation.
+    </p>
+
+    <div class="alert">
+        <strong>Pourquoi cette analyse est indispensable ?</strong><br><br>
+        Le CEREMA modifie régulièrement :
+        <ul style="margin-top:6px; line-height:1.7;">
+            <li>les <strong>noms des colonnes</strong> (ex : <em>epci24</em> → <em>epci25</em>)</li>
+            <li>les <strong>années disponibles</strong></li>
+            <li>les <strong>catégories de flux</strong> (habitat, activité, mixte…)</li>
+            <li>les <strong>colonnes dérivées</strong> (NAF, artcom, surfaces…)</li>
+        </ul>
+    </div>
+
+    <h3>🧠 Une lecture intelligente grâce à une grammaire dynamique</h3>
+
+    <p>
+        L’application utilise une <strong>grammaire</strong> : un ensemble de règles permettant de reconnaître automatiquement
+        les colonnes du fichier, même si leur nom change.
+    </p>
+
+    <div class="card">
+        Exemples de règles :
+        <ul style="margin-top:6px; line-height:1.7;">
+            <li><code>art(\d{2})(act|hab|mix|rou|fer|inc)(\d{2})</code> → flux d’artificialisation</li>
+            <li><code>naf(\d{2})art(\d{2})</code> → flux NAF → artificialisation</li>
+            <li><code>surf([a-z]+)(\d{4})</code> → surfaces par catégorie</li>
+            <li><code>aav(\d{4})(txt|_typo)?</code> → typologies AAV</li>
+        </ul>
+    </div>
+
+    <h3>🔍 Test automatique de compatibilité</h3>
+
+    <p>
+        Lors du chargement du fichier CSV, l’application effectue un 
+        <strong>test automatique de décodabilité</strong> :
+    </p>
+
+    <div class="card">
+        <ul style="line-height:1.7;">
+            <li>100 % des colonnes doivent correspondre à une règle de la grammaire</li>
+            <li>les colonnes non reconnues sont listées</li>
+            <li>l’application s’arrête proprement si le fichier est incompatible</li>
+        </ul>
+    </div>
+
+    <div class="nota">
+        <strong>📌 Note :</strong>  
+        La grammaire couvre les années 2009 → 2099 et s’adapte automatiquement aux nouveaux flux publiés chaque année.
+    </div>
+</div>
+
+<!-- FIN PARTIE 1 -->
+
+<!-- SECTION 4 — PRISE EN MAIN -->
+<div class="section" id="prise-en-main">
+    <div class="section-title">
+        <div class="section-num">4</div>
+        <h2>🚀 Prise en main</h2>
+    </div>
+
+    <div class="step"><strong>Étape 1 —</strong> Ouvrir l'application dans votre navigateur</div>
+    <div class="step"><strong>Étape 2 —</strong> Charger le fichier CSV via la barre latérale</div>
+
+    <div class="step"><strong>Étape 3 —</strong> Choisir le niveau territorial :</div>
+    <div class="card">
+        🏘️ <strong>Commune</strong> → saisir le code INSEE (5 chiffres)<br>
+        🏛️ <strong>Intercommunalité</strong> → saisir le SIRET EPCI (9 chiffres) ou rechercher par nom<br>
+        🗺️ <strong>SCoT</strong> → rechercher par nom ou sélectionner dans la liste
+    </div>
+
+    <div class="step" style="margin-top:12px;"><strong>Étape 4 —</strong> Naviguer dans les onglets d'analyse</div>
+    <div class="step"><strong>Étape 5 —</strong> Choisir le coefficient ZAN dans l'onglet Analyse & Tendances</div>
+</div>
+
+<!-- SECTION 5 — LECTURE DES ONGLES -->
+<div class="section" id="onglets">
+    <div class="section-title">
+        <div class="section-num">5</div>
+        <h2>📊 Lecture des onglets</h2>
+    </div>
+
+    <h3>📊 Général</h3>
+    <div class="card">
+        Fiche d'identité du territoire : commune, département, région, EPCI, SCoT, surface, population.
+    </div>
+
+    <h3 style="margin-top:18px;">📐 Synthèse</h3>
+    <div class="card">
+        Vue d'ensemble des indicateurs principaux : surfaces artificialisées par catégorie, évolution temporelle, bilan ZAN.
+    </div>
+
+    <h3 style="margin-top:18px;">📈 Analyse & Tendances</h3>
+    <div class="card">
+        Courbes historiques (2011-2020), valeurs observées (2021-2024) et projection (2025-2030) selon le coefficient ZAN.
+    </div>
+
+    <h3 style="margin-top:18px;">📐 Ratios</h3>
+    <div class="card">
+        5 familles d'indicateurs analytiques : foncier/population, habitat/ménages, activité/emploi, surface communale, bilan ZAN.
+    </div>
+
+    <h3 style="margin-top:18px;">📄 Export PDF</h3>
+    <div class="card">
+        Génère un rapport PDF multi-pages intégrant tous les graphiques, ratios et le bilan ZAN.
+    </div>
+
+    <h3 style="margin-top:18px;">💾 Liens utiles</h3>
+    <div class="card">
+        Accès rapide aux portails cartographiques : Géoportail, OCS GE, GPU, RPG, Cadastre, INSEE, Picto-Stat, IGN…
+    </div>
+</div>
+
+<!-- SECTION 6 — RATIOS -->
+<div class="section" id="ratios">
+    <div class="section-title">
+        <div class="section-num">6</div>
+        <h2>📐 Comprendre les ratios analytiques</h2>
+    </div>
+
+    <div class="alert" style="background:#E3F0FF; border-color:#2c6faa;">
+        <strong>Pourquoi des ratios ?</strong><br>
+        Ils permettent de comparer des territoires de tailles différentes sur une base équitable.
+    </div>
+
+    <!-- Famille 1 -->
+    <h3 style="margin:20px 0 12px; color:#1f4e79;">🏗️ Famille 1 — Foncier & Population</h3>
+
+    <div class="ratio-card">
+        <div class="ratio-name">m² consommés par habitant (total)</div>
+        <div class="ratio-formula">Consommation totale (m²) ÷ Population 2021</div>
+        <p class="ratio-desc">Mesure la part de territoire artificialisé par habitant.</p>
+    </div>
+
+    <div class="ratio-card">
+        <div class="ratio-name">Rythme annuel moyen (m²/habitant/an)</div>
+        <div class="ratio-formula">Consommation période ÷ Durée ÷ Population moyenne</div>
+        <p class="ratio-desc">Compare le rythme entre la décennie de référence et la période ZAN.</p>
+    </div>
+
+    <!-- Famille 2 -->
+    <h3 style="margin:20px 0 12px; color:#1B6B3A;">🏠 Famille 2 — Habitat & Ménages</h3>
+
+    <div class="ratio-card vert">
+        <div class="ratio-name">m² d'habitat consommés par nouveau ménage</div>
+        <div class="ratio-formula">Surface habitat 2011-2020 ÷ Nouveaux ménages 2015-2021</div>
+    </div>
+
+    <div class="ratio-card vert">
+        <div class="ratio-name">Densité résidentielle implicite</div>
+        <div class="ratio-formula">Nouveaux ménages ÷ Hectares habitat artificialisés</div>
+    </div>
+
+    <!-- Famille 3 -->
+    <h3 style="margin:20px 0 12px; color:#C45C00;">🏭 Famille 3 — Activité économique & Emploi</h3>
+
+    <div class="ratio-card orange">
+        <div class="ratio-name">m² d'activité consommés par emploi créé</div>
+        <div class="ratio-formula">Surface activité totale ÷ Variation emplois</div>
+    </div>
+
+    <div class="ratio-card orange">
+        <div class="ratio-name">Ratio habitat / activité</div>
+        <div class="ratio-formula">Surface habitat ÷ Surface activité</div>
+    </div>
+
+    <!-- Famille 4 -->
+    <h3 style="margin:20px 0 12px; color:#4A5568;">📏 Famille 4 — Surface & Pression territoriale</h3>
+
+    <div class="ratio-card gris">
+        <div class="ratio-name">% du territoire communal artificialisé</div>
+        <div class="ratio-formula">Consommation totale ÷ Surface commune × 100</div>
+    </div>
+</div>
+
+<!-- SECTION 7 — ZAN -->
+<div class="section" id="zan">
+    <div class="section-title">
+        <div class="section-num">7</div>
+        <h2>⚡ Indicateurs ZAN — Zéro Artificialisation Nette</h2>
+    </div>
+
+    <div class="zan-box">
+        <h3>⚖️ Le cadre réglementaire</h3>
+        <p>
+            La loi Climat et Résilience fixe un objectif national de réduction de la consommation foncière.
+        </p>
+        <div class="zan-formula-big">
+            Enveloppe 2021-2031 = Consommation 2011-2020 × (1 − coefficient de réduction)
+        </div>
+    </div>
+
+    <div class="ratio-card">
+        <div class="ratio-name">Enveloppe ZAN 2021-2031</div>
+        <div class="ratio-formula">Conso 2011-2020 × (1 − coefficient)</div>
+    </div>
+
+    <div class="ratio-card">
+        <div class="ratio-name">% de l'enveloppe ZAN utilisée</div>
+        <div class="ratio-formula">Conso 2021-2024 ÷ Enveloppe × 100</div>
+    </div>
+
+    <div class="ratio-card">
+        <div class="ratio-name">Capacité annuelle résiduelle</div>
+        <div class="ratio-formula">Solde restant ÷ années restantes</div>
+    </div>
+</div>
+
+<!-- SECTION 8 — BONNES PRATIQUES -->
+<div class="section" id="bonnes-pratiques">
+    <div class="section-title">
+        <div class="section-num">8</div>
+
+</div>
+
+</div>
+</body>
+</html>

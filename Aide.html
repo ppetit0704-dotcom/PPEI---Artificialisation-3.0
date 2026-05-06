@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Notice d'utilisation - PPEI Artificialisation <V3 class="0 0"></V3></title>
+<style>
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f6f9;
+    color: #2c3e50;
+}
+
+/* ── HEADER ── */
+.header {
+    background: linear-gradient(90deg, #1f4e79, #2c6faa);
+    color: white;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.header img { height: 60px; margin-right: 20px; }
+
+/* ── NAVIGATION RAPIDE ── */
+.nav-bar {
+    background: #1f4e79;
+    padding: 0 40px;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,0.15);
+}
+.nav-bar a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 4px 4px 0 0;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+.nav-bar a:hover { background: rgba(255,255,255,0.15); color: white; }
+
+/* ── CONTAINER ── */
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+h1, h2, h3 { color: #1f4e79; }
+
+/* ── SECTIONS ── */
+.section { margin-bottom: 48px; }
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(90deg, #1f4e79, #2c6faa);
+    color: white;
+    padding: 14px 22px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+.section-title h2 { color: white; margin: 0; font-size: 18px; }
+.section-num {
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0;
+}
+
+.alert {
+    background: #fff3cd;
+    border-left: 6px solid #ffc107;
+    padding: 20px;
+    margin-bottom: 24px;
+    border-radius: 0 8px 8px 0;
+}
+
+.step { margin-bottom: 12px; }
+.step strong { color: #0d6efd; }
+
+.card {
+    background: #f8fafc;
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border-left: 3px solid #2c6faa;
+}
+
+/* ── RATIOS ── */
+.ratio-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    border-top: 4px solid #1f4e79;
+}
+.ratio-card.vert   { border-top-color: #1B6B3A; }
+.ratio-card.orange { border-top-color: #C45C00; }
+.ratio-card.rouge  { border-top-color: #B71C1C; }
+.ratio-card.gris   { border-top-color: #718096; }
+
+.ratio-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1f4e79;
+    margin-bottom: 6px;
+}
+.ratio-card.vert   .ratio-name { color: #1B6B3A; }
+.ratio-card.orange .ratio-name { color: #C45C00; }
+.ratio-card.rouge  .ratio-name { color: #B71C1C; }
+
+.ratio-formula {
+    display: inline-block;
+    background: #EDF2F7;
+    border: 1px solid #CBD5E0;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px;
+    color: #1f4e79;
+    margin: 6px 0 10px;
+    font-weight: 700;
+}
+
+.ratio-desc { color: #4A5568; margin-bottom: 10px; font-size: 14px; }
+
+.exemple {
+    background: #E3F0FF;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    font-size: 13.5px;
+}
+.exemple.vert   { background: #E8F5EC; }
+.exemple.orange { background: #FFF3E6; }
+.exemple.rouge  { background: #FDEAEA; }
+
+.exemple-label {
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #1f4e79;
+    margin-bottom: 5px;
+}
+.exemple.vert   .exemple-label { color: #1B6B3A; }
+.exemple.orange .exemple-label { color: #C45C00; }
+.exemple.rouge  .exemple-label { color: #B71C1C; }
+
+/* ── GRILLE INTERPRÉTATION ── */
+.interp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+.interp-item {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    text-align: center;
+}
+.interp-item .icon { font-size: 18px; display: block; margin-bottom: 3px; }
+.interp-item.bon   { background: #E8F5EC; color: #1B6B3A; }
+.interp-item.moyen { background: #FFF3E6; color: #C45C00; }
+.interp-item.bad   { background: #FDEAEA; color: #B71C1C; }
+
+/* ── ZAN ── */
+.zan-box {
+    background: linear-gradient(135deg, #1A237E, #1f4e79);
+    color: white;
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+}
+.zan-box h3 { color: white; font-size: 17px; margin-bottom: 10px; }
+.zan-box p  { opacity: 0.9; font-size: 14px; line-height: 1.7; }
+.zan-formula-big {
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin: 14px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* ── GAUGE ── */
+.gauge-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+}
+.gauge-item {
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    font-size: 12.5px;
+}
+.gauge-item .pct { font-size: 16px; font-weight: 700; display: block; }
+.gauge-item .lbl { margin-top: 4px; font-weight: 600; }
+.gauge-item .sub { opacity: 0.8; font-size: 11.5px; }
+.gauge-vert   { background: #E8F5EC; color: #1B6B3A; }
+.gauge-orange { background: #FFF3E6; color: #C45C00; }
+.gauge-rouge  { background: #FDEAEA; color: #B71C1C; }
+
+/* ── TABLE ── */
+.ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+.ref-table th {
+    background: #1f4e79;
+    color: white;
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 12.5px;
+}
+.ref-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #EDF2F7;
+    vertical-align: top;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:nth-child(even) td { background: #F7F9FC; }
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+}
+.badge-vert   { background: #E8F5EC; color: #1B6B3A; }
+.badge-orange { background: #FFF3E6; color: #C45C00; }
+.badge-rouge  { background: #FDEAEA; color: #B71C1C; }
+.badge-bleu   { background: #E3F0FF; color: #1f4e79; }
+.badge-gris   { background: #EDF2F7; color: #4A5568; }
+
+/* ── NOTA ── */
+.nota {
+    background: #FFFBEA;
+    border: 1px solid #F6C90E;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #744210;
+    margin-top: 16px;
+}
+
+/* ── FOOTER ── */
+.footer {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #EDF2F7;
+}
+
+/* ── PRINT ── */
+@media print {
+    .header { position: static; }
+    .nav-bar { display: none; }
+    .ratio-card { break-inside: avoid; }
+    .container { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <img src="assets/logo.png" alt="Logo PPEI">
+    <div>
+        <h1 style="color:white; margin:0; font-size:22px;">PPEI – Plateforme Publique d'Échanges et d'Informations</h1>
+        <div style="font-size:13px; opacity:0.85; margin-top:4px;">
+            Tableau de bord Artificialisation communale &amp; intercommunale &nbsp;|&nbsp; Auteur : Philippe PETIT &nbsp;|&nbsp; V3.0.0
+        </div>
+    </div>
+</div>
+
+<!-- NAVIGATION RAPIDE -->
+<div class="nav-bar">
+    <a href="#preamble">📌 Préambule</a>
+    <a href="#objectifs">🎯 Objectifs</a>
+    <a href="#prise-en-main">🚀 Prise en main</a>
+    <a href="#onglets">📊 Onglets</a>
+    <a href="#ratios">📐 Ratios</a>
+    <a href="#zan">⚡ ZAN</a>
+    <a href="#bonnes-pratiques">🧠 Bonnes pratiques</a>
+    <a href="#limites">⚠️ Limites</a>
+    <a href="#assistance">🛠️ Assistance</a>
+</div>
+
+<div class="container">
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 1 — PRÉAMBULE -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="preamble">
+        <div class="section-title">
+            <div class="section-num">1</div>
+            <h2>📌 Préambule indispensable</h2>
+        </div>
+        <div class="alert">
+            <strong>Avant toute utilisation de l'application :</strong><br><br>
+            1. Télécharger les données officielles depuis l'Observatoire de l'artificialisation des sols.<br>
+            2. Enregistrer le fichier sur votre ordinateur (format CSV).<br>
+            3. Charger ce fichier dans l'application via le module d'import.<br><br>
+            ⚠️ L'application ne contient pas de données par défaut : elle fonctionne uniquement avec les données que vous fournissez.
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 2 — OBJECTIFS -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="objectifs">
+        <div class="section-title">
+            <div class="section-num">2</div>
+            <h2>🎯 Objectifs de l'application</h2>
+        </div>
+        <p>Cette application permet :</p>
+        <ul style="margin-top:10px; line-height:2;">
+            <li>D'analyser l'évolution de l'artificialisation des sols à trois échelles : <strong>commune, EPCI/CC et SCoT</strong></li>
+            <li>D'aider à la prise de décision des collectivités dans le cadre de la loi ZAN</li>
+            <li>D'objectiver les politiques d'aménagement avec des ratios analytiques</li>
+            <li>De rendre les données accessibles aux élus et aux citoyens, <strong>gratuitement</strong></li>
+            <li>De produire des rapports PDF professionnels à destination des conseils municipaux et communautaires</li>
+        </ul>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 3 — PRISE EN MAIN -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="prise-en-main">
+        <div class="section-title">
+            <div class="section-num">3</div>
+            <h2>🚀 Prise en main</h2>
+        </div>
+        <div class="step"><strong>Étape 1 —</strong> Ouvrir l'application dans votre navigateur</div>
+        <div class="step"><strong>Étape 2 —</strong> Charger le fichier CSV via la barre latérale (bouton "Chargement des données")</div>
+        <div class="step"><strong>Étape 3 —</strong> Choisir le <strong>niveau territorial</strong> dans le menu latéral :
+            <div class="card" style="margin-top:8px;">
+                🏘️ <strong>Commune</strong> → saisir le code INSEE (5 chiffres)<br>
+                🏛️ <strong>Intercommunalité</strong> → saisir le SIRET EPCI (9 chiffres) ou rechercher par nom<br>
+                🗺️ <strong>SCoT</strong> → rechercher par nom ou sélectionner dans la liste
+            </div>
+        </div>
+        <div class="step" style="margin-top:12px;"><strong>Étape 4 —</strong> Naviguer dans les onglets d'analyse</div>
+        <div class="step"><strong>Étape 5 —</strong> Choisir le coefficient de réduction ZAN dans l'onglet "Analyse &amp; Tendances" avant de générer le rapport PDF</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 4 — ANALYSE AUTOMATIQUE DU FICHIER CEREMA -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="analyse-structure">
+        <div class="section-title">
+            <div class="section-num">3 bis</div>
+            <h2>🧩 Analyse automatique de la structure du fichier CEREMA</h2>
+        </div>
+
+        <p>
+            Depuis la version <strong>3.0</strong>, l’application intègre un mécanisme essentiel : 
+            <strong>la détection automatique de la structure du fichier CSV fourni par le CEREMA</strong>.
+        </p>
+
+        <div class="alert" style="background:#FFF3CD; border-color:#FFC107;">
+            ⚠️ <strong>Pourquoi est-ce indispensable ?</strong><br><br>
+            Le CEREMA modifie régulièrement :
+            <ul style="margin-top:6px; line-height:1.7;">
+                <li>les <strong>noms des colonnes</strong> (ex : <em>epci24</em> → <em>epci25</em>)</li>
+                <li>les <strong>années disponibles</strong> (nouveaux millésimes chaque année)</li>
+                <li>les <strong>catégories de flux</strong> (habitat, activité, mixte…)</li>
+                <li>les <strong>colonnes dérivées</strong> (NAF, artcom, surfaces, ratios…)</li>
+            </ul>
+            <b style="color:red")>Sans analyse préalable, l’application ne pourrait pas fonctionner avec les fichiers futurs.</b>
+        </div>
+
+        <h3 style="margin-top:24px;">📌 Le principe : une <em>grammaire dynamique</em></h3>
+
+        <p>
+            L’application ne repose plus sur une liste figée de colonnes.  
+            Elle utilise désormais une <strong>grammaire</strong> : un ensemble de règles permettant de reconnaître
+            automatiquement les colonnes du fichier, même si leur nom change.
+        </p>
+
+        <div class="card">
+            Exemple de règles de grammaire :
+            <ul style="margin-top:6px; line-height:1.7;">
+                <li><code>art(\d{2})(act|hab|mix|rou|fer|inc)(\d{2})</code> → flux d’artificialisation</li>
+                <li><code>naf(\d{2})art(\d{2})</code> → flux NAF → artificialisation</li>
+                <li><code>surf([a-z]+)(\d{4})</code> → surfaces par catégorie</li>
+                <li><code>aav(\d{4})(txt|_typo)?</code> → typologies AAV</li>
+            </ul>
+        </div>
+
+        <p style="margin-top:16px;">
+            Grâce à cette grammaire, l’application peut reconnaître automatiquement :
+        </p>
+
+        <ul style="line-height:1.8;">
+            <li>les colonnes des années futures (<em>art24hab25</em>, <em>naf24art25</em>, etc.)</li>
+            <li>les colonnes d’identification (<em>epci24</em>, <em>epci25</em>, …)</li>
+            <li>les nouvelles catégories ajoutées par le CEREMA</li>
+            <li>les colonnes inconnues mais structurées</li>
+        </ul>
+
+        <h3 style="margin-top:24px;">🔍 Test automatique de compatibilité</h3>
+
+        <p>
+            Lors du chargement du fichier CSV, l’application effectue un 
+            <strong>test automatique de décodabilité</strong> :
+        </p>
+
+        <div class="card">
+            <ul style="line-height:1.7;">
+                <li>100 % des colonnes doivent correspondre à une règle de la grammaire</li>
+                <li>les colonnes non reconnues sont listées</li>
+                <li>l’application s’arrête proprement si le fichier est incompatible</li>
+            </ul>
+        </div>
+
+        <p style="margin-top:16px;">
+            Ce mécanisme garantit que l’application reste <strong>compatible avec tous les millésimes CEREMA</strong>,
+            sans mise à jour manuelle du code.
+        </p>
+
+        <div class="nota">
+            <strong>📌 Note :</strong>  
+            La grammaire couvre les années 2009 → 2099 et s’adapte automatiquement aux nouveaux flux publiés chaque année.
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 4 — ONGLETS -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="onglets">
+        <div class="section-title">
+            <div class="section-num">4</div>
+            <h2>📊 Lecture des onglets</h2>
+        </div>
+
+        <h3>📊 Général</h3>
+        <div class="card">
+            Fiche d'identité du territoire sélectionné : commune, département, région, EPCI, SCoT, surface, population. En mode EPCI ou SCoT : tableau des communes membres avec leurs alertes ZAN 🟢🟠🔴.
+        </div>
+
+        <h3 style="margin-top:18px;">📐 Synthèse</h3>
+        <div class="card">
+            Vue d'ensemble des indicateurs principaux : surfaces artificialisées par catégorie (habitat, activité, route…), évolution temporelle, bilan ZAN agrégé.
+        </div>
+
+        <h3 style="margin-top:18px;">📈 Analyse &amp; Tendances</h3>
+        <div class="card">
+            Courbes historiques (2011-2020), valeurs observées (2021-2024) et projection (2025-2030) selon le coefficient de réduction ZAN choisi. Le <strong>sélecteur de coefficient</strong> est partagé avec l'onglet Export PDF.
+        </div>
+
+        <h3 style="margin-top:18px;">📐 Ratios</h3>
+        <div class="card">
+            5 familles d'indicateurs analytiques (voir section dédiée ci-dessous) : foncier/population, habitat/ménages, activité/emploi, surface communale, bilan ZAN détaillé.
+        </div>
+
+        <h3 style="margin-top:18px;">📄 Export PDF</h3>
+        <div class="card">
+            Génère un rapport PDF multi-pages personnalisé intégrant tous les graphiques, ratios et le bilan ZAN avec le coefficient sélectionné. Le nom du fichier inclut le code INSEE ou le SIRET et la date de génération.
+        </div>
+
+        <h3 style="margin-top:18px;">💾 Liens utiles</h3>
+        <div class="card">
+            Accès rapide aux portails cartographiques et statistiques : Géoportail, OCS GE, GPU, RPG, Cadastre, INSEE, Picto-Stat, IGN Remonter le temps, valeurs foncières…
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 5 — RATIOS -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="ratios">
+        <div class="section-title">
+            <div class="section-num">5</div>
+            <h2>📐 Comprendre les ratios analytiques</h2>
+        </div>
+
+        <div class="alert" style="background:#E3F0FF; border-color:#2c6faa;">
+            <strong>Pourquoi des ratios ?</strong> La consommation foncière brute (en hectares) dépend directement de la taille de la commune. Un chiffre de 10 ha consommés est très différent selon qu'il concerne une ville de 50 000 habitants ou un village de 500 âmes. Les ratios permettent de <strong>remettre les données en contexte</strong> et de comparer des territoires de tailles différentes sur une base équitable.
+        </div>
+
+        <!-- Famille 1 -->
+        <h3 style="margin:20px 0 12px; color:#1f4e79;">🏗️ Famille 1 — Foncier &amp; Population</h3>
+
+        <div class="ratio-card">
+            <div class="ratio-name">m² consommés par habitant (total)</div>
+            <div class="ratio-formula">Consommation totale (m²) ÷ Population 2021</div>
+            <p class="ratio-desc">Mesure la "part" de territoire artificialisé qui revient à chaque habitant sur la période 2009-2024. Indicateur le plus direct pour juger si une commune a consommé raisonnablement au regard de sa taille démographique.</p>
+            <div class="exemple">
+                <div class="exemple-label">Exemple</div>
+                Une commune de <strong>3 000 hab.</strong> ayant consommé <strong>45 ha</strong> obtient <strong>150 m²/habitant</strong> — environ 1,5 fois la surface d'un appartement par habitant artificialisé.
+            </div>
+            <div class="interp-grid">
+                <div class="interp-item bon"><span class="icon">🟢</span>&lt; 100 m²/hab<br><small>Sobre</small></div>
+                <div class="interp-item moyen"><span class="icon">🟠</span>100 – 250 m²/hab<br><small>Modéré</small></div>
+                <div class="interp-item bad"><span class="icon">🔴</span>&gt; 250 m²/hab<br><small>Étalement fort</small></div>
+            </div>
+        </div>
+
+        <div class="ratio-card">
+            <div class="ratio-name">Rythme annuel moyen (m²/habitant/an)</div>
+            <div class="ratio-formula">Consommation période ÷ Durée (ans) ÷ Population moyenne</div>
+            <p class="ratio-desc">Compare le rythme entre la décennie de référence (2011-2020) et la période ZAN (2021-2024). Une valeur en baisse sur la période ZAN est le signe d'une trajectoire favorable.</p>
+            <div class="exemple vert">
+                <div class="exemple-label">Bonne trajectoire ✅</div>
+                Rythme 2011-2020 : <strong>18 m²/hab/an</strong> → Rythme 2021-2024 : <strong>7 m²/hab/an</strong> → Réduction de <strong>−61 %</strong>
+            </div>
+            <div class="exemple rouge" style="margin-top:6px;">
+                <div class="exemple-label">Trajectoire préoccupante ⚠️</div>
+                Rythme 2011-2020 : <strong>12 m²/hab/an</strong> → Rythme 2021-2024 : <strong>15 m²/hab/an</strong> → La commune <strong>accélère</strong> malgré la loi ZAN.
+            </div>
+        </div>
+
+        <!-- Famille 2 -->
+        <h3 style="margin:20px 0 12px; color:#1B6B3A;">🏠 Famille 2 — Habitat &amp; Ménages</h3>
+
+        <div class="ratio-card vert">
+            <div class="ratio-name">m² d'habitat consommés par nouveau ménage</div>
+            <div class="ratio-formula">Surface habitat 2011-2020 (m²) ÷ Nouveaux ménages 2015-2021</div>
+            <p class="ratio-desc">Mesure l'<strong>efficacité résidentielle</strong> : combien de m² de terrain ont été artificialisés pour accueillir chaque nouveau ménage. Un ratio élevé révèle un étalement résidentiel (grandes parcelles, faible densité).</p>
+            <div class="exemple vert">
+                <div class="exemple-label">Exemple</div>
+                6,5 ha d'habitat consommés pour 130 nouveaux ménages → <strong>500 m²/ménage</strong> — typique du pavillonnaire classique.
+            </div>
+            <div class="interp-grid">
+                <div class="interp-item bon"><span class="icon">🟢</span>&lt; 250 m²<br><small>Bon groupement</small></div>
+                <div class="interp-item moyen"><span class="icon">🟠</span>250 – 600 m²<br><small>Pavillonnaire</small></div>
+                <div class="interp-item bad"><span class="icon">🔴</span>&gt; 600 m²<br><small>Fort étalement</small></div>
+            </div>
+        </div>
+
+        <div class="ratio-card vert">
+            <div class="ratio-name">Densité résidentielle implicite (ménages/ha)</div>
+            <div class="ratio-formula">Nouveaux ménages 2015-2021 ÷ Hectares habitat artificialisés</div>
+            <p class="ratio-desc">Combien de ménages ont été accueillis par hectare artificialisé à usage d'habitat. Directement comparable aux référentiels des documents d'urbanisme (PLU, PLUi).</p>
+            <table class="ref-table">
+                <tr><th>Densité</th><th>Forme urbaine</th><th>Appréciation ZAN</th></tr>
+                <tr><td><strong>&gt; 40 mén/ha</strong></td><td>Collectif, centre-bourg dense</td><td><span class="badge badge-vert">Très bonne</span></td></tr>
+                <tr><td><strong>20 – 40 mén/ha</strong></td><td>Intermédiaire, lotissement dense</td><td><span class="badge badge-vert">Bonne</span></td></tr>
+                <tr><td><strong>10 – 20 mén/ha</strong></td><td>Pavillonnaire classique</td><td><span class="badge badge-orange">Moyenne</span></td></tr>
+                <tr><td><strong>&lt; 10 mén/ha</strong></td><td>Habitat diffus, grandes parcelles</td><td><span class="badge badge-rouge">Préoccupante</span></td></tr>
+            </table>
+        </div>
+
+        <!-- Famille 3 -->
+        <h3 style="margin:20px 0 12px; color:#C45C00;">🏭 Famille 3 — Activité économique &amp; Emploi</h3>
+
+        <div class="ratio-card orange">
+            <div class="ratio-name">m² d'activité consommés par emploi créé</div>
+            <div class="ratio-formula">Surface activité totale (m²) ÷ Variation emplois 2015-2021</div>
+            <p class="ratio-desc">Mesure le <strong>coût foncier de l'emploi</strong> : combien de m² de zones d'activité ont été artificialisés pour chaque emploi créé. Un ratio très élevé peut indiquer des zones sous-occupées ou surdimensionnées.</p>
+            <div class="exemple orange">
+                <div class="exemple-label">Exemple</div>
+                Zone artisanale de <strong>3 ha</strong> pour <strong>60 emplois</strong> → <strong>500 m²/emploi</strong>. Pour une zone logistique ce ratio peut atteindre 2 000 – 5 000 m²/emploi.
+            </div>
+            <div class="nota" style="margin-top:10px; font-size:12.5px;">
+                <strong>⚠️ Prudence :</strong> Une perte d'emplois (valeur négative) rend ce ratio non significatif. Certaines activités sont intrinsèquement très consommatrices de surface par emploi (logistique, agriculture industrielle).
+            </div>
+        </div>
+
+        <div class="ratio-card orange">
+            <div class="ratio-name">Ratio habitat / activité</div>
+            <div class="ratio-formula">Surface habitat totale ÷ Surface activité totale</div>
+            <p class="ratio-desc">Exprime l'équilibre entre consommation résidentielle et économique.</p>
+            <div class="interp-grid">
+                <div class="interp-item bon"><span class="icon">⚖️</span>0,5 – 2,0 x<br><small>Équilibré</small></div>
+                <div class="interp-item moyen"><span class="icon">🏘️</span>&gt; 3,0 x<br><small>Dominante résidentielle</small></div>
+                <div class="interp-item bad"><span class="icon">🏭</span>&lt; 0,3 x<br><small>Dominante économique</small></div>
+            </div>
+        </div>
+
+        <!-- Famille 4 -->
+        <h3 style="margin:20px 0 12px; color:#4A5568;">📏 Famille 4 — Surface &amp; Pression territoriale</h3>
+
+        <div class="ratio-card gris">
+            <div class="ratio-name">% du territoire communal artificialisé</div>
+            <div class="ratio-formula">Consommation totale (m²) ÷ Surface commune (m²) × 100</div>
+            <p class="ratio-desc">Indique quelle fraction du territoire a été artificialisée entre 2009 et 2024. Met en évidence les communes soumises à une forte pression foncière par rapport à leur superficie.</p>
+            <div class="exemple">
+                <div class="exemple-label">Exemple</div>
+                Commune de <strong>150 ha</strong> (petite commune périurbaine) qui consomme <strong>8 ha</strong> → <strong>5,3 %</strong> d'artificialisation — pression très forte pour une si petite commune.
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 6 — ZAN -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="zan">
+        <div class="section-title">
+            <div class="section-num">6</div>
+            <h2>⚡ Indicateurs ZAN — Zéro Artificialisation Nette</h2>
+        </div>
+
+        <div class="zan-box">
+            <h3>⚖️ Le cadre réglementaire</h3>
+            <p>La <strong>loi Climat et Résilience du 22 août 2021</strong> fixe un objectif national de réduction de la consommation foncière avec un palier intermédiaire sur 2021-2031 :</p>
+            <div class="zan-formula-big">Enveloppe 2021-2031 = Consommation 2011-2020 × (1 − coefficient de réduction)</div>
+            <p>Le <strong>coefficient de réduction</strong> varie selon les territoires. La loi fixe un minimum de <strong>−50 %</strong> à l'échelle nationale. Le SRADDET d'Occitanie propose <strong>−60,7 %</strong> pour certains types de territoires. C'est ce coefficient que vous choisissez dans l'onglet <em>Analyse &amp; Tendances</em>.</p>
+        </div>
+
+        <div class="ratio-card">
+            <div class="ratio-name">Enveloppe ZAN 2021-2031</div>
+            <div class="ratio-formula">Conso 2011-2020 (ha) × (1 − coefficient choisi)</div>
+            <p class="ratio-desc">Le <strong>quota maximal</strong> de surface que la commune peut consommer entre 2021 et 2031. Toute consommation au-delà constitue un dépassement de l'objectif ZAN.</p>
+            <div class="exemple">
+                <div class="exemple-label">Avec coefficient −50 %</div>
+                Commune ayant consommé <strong>11,50 ha</strong> en 2011-2020 → Enveloppe = <strong>5,75 ha</strong> pour 2021-2031 → <strong>0,575 ha/an</strong> autorisé.
+            </div>
+            <div class="exemple vert" style="margin-top:6px;">
+                <div class="exemple-label">Avec coefficient SRADDET Occitanie −60,7 %</div>
+                Enveloppe = 11,50 × 0,393 = <strong>4,52 ha</strong> → <strong>0,452 ha/an</strong> — contrainte plus forte.
+            </div>
+        </div>
+
+        <div class="ratio-card">
+            <div class="ratio-name">% de l'enveloppe ZAN utilisée (jauge)</div>
+            <div class="ratio-formula">Consommation 2021-2024 (ha) ÷ Enveloppe ZAN (ha) × 100</div>
+            <p class="ratio-desc">Indicateur central de la jauge ZAN. Après 4 ans sur 10, une commune "à l'équilibre" devrait avoir utilisé environ 40 % de son enveloppe.</p>
+            <div class="gauge-row">
+                <div class="gauge-item gauge-vert">
+                    <span class="pct">🟢 &lt; 70 %</span>
+                    <div class="lbl">Favorable</div>
+                    <div class="sub">Trajectoire ZAN respectée</div>
+                </div>
+                <div class="gauge-item gauge-orange">
+                    <span class="pct">🟠 70–100 %</span>
+                    <div class="lbl">Vigilance</div>
+                    <div class="sub">Risque de dépassement avant 2031</div>
+                </div>
+                <div class="gauge-item gauge-rouge">
+                    <span class="pct">🔴 &gt; 100 %</span>
+                    <div class="lbl">Dépassement</div>
+                    <div class="sub">Révision du PLU/PLUi nécessaire</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ratio-card">
+            <div class="ratio-name">Capacité annuelle résiduelle</div>
+            <div class="ratio-formula">Solde restant (ha) ÷ 7 années restantes jusqu'en 2031</div>
+            <p class="ratio-desc">Ce que la commune peut encore consommer chaque année sans dépasser son quota. Outil concret pour l'instruction des permis de construire.</p>
+            <div class="exemple vert">
+                <div class="exemple-label">Exemple pratique pour un élu</div>
+                Solde restant : <strong>2,10 ha</strong> → Capacité résiduelle : <strong>0,30 ha/an = 3 000 m²/an</strong><br>
+                Soit environ <strong>5 à 8 lots pavillonnaires par an</strong>, ou <strong>1 petite zone artisanale</strong> sur toute la période.
+            </div>
+        </div>
+
+        <div class="nota">
+            <strong>📌 Note technique sur les périodes :</strong> Les données CEREMA sont structurées par flux annuels (ex : <em>art11hab12</em> = surface habitat artificialisée entre 2011 et 2012). La période de référence 2011-2020 correspond aux flux de 2012 à 2021, et la période ZAN 2021-2024 aux flux de 2022 à 2024. Ce décalage d'un an est inhérent au mode de collecte et est pris en compte dans tous les calculs.
+        </div>
+
+        <!-- Tableau récap ratios -->
+        <h3 style="margin:24px 0 8px;">Tableau récapitulatif de tous les ratios</h3>
+        <table class="ref-table">
+            <tr><th>Ratio</th><th>Unité</th><th>Ce qu'il mesure</th><th>Famille</th></tr>
+            <tr><td>m²/habitant (total)</td><td>m²/hab</td><td>Consommation globale par tête</td><td><span class="badge badge-bleu">Foncier/Pop</span></td></tr>
+            <tr><td>Rythme annuel m²/hab/an</td><td>m²/hab/an</td><td>Intensité de consommation annuelle</td><td><span class="badge badge-bleu">Foncier/Pop</span></td></tr>
+            <tr><td>ha/1 000 hab</td><td>ha/millier</td><td>Comparaison inter-territoriale</td><td><span class="badge badge-bleu">Foncier/Pop</span></td></tr>
+            <tr><td>m²/nouveau ménage</td><td>m²/ménage</td><td>Efficacité résidentielle</td><td><span class="badge badge-vert">Habitat</span></td></tr>
+            <tr><td>Densité résidentielle</td><td>mén/ha</td><td>Densité nette des opérations habitat</td><td><span class="badge badge-vert">Habitat</span></td></tr>
+            <tr><td>m²/emploi créé</td><td>m²/emploi</td><td>Coût foncier de l'emploi</td><td><span class="badge badge-orange">Activité</span></td></tr>
+            <tr><td>Ratio habitat/activité</td><td>× (fois)</td><td>Équilibre résidentiel/économique</td><td><span class="badge badge-orange">Activité</span></td></tr>
+            <tr><td>% territoire artificialisé</td><td>%</td><td>Pression sur le foncier total</td><td><span class="badge badge-gris">Surface</span></td></tr>
+            <tr><td>Enveloppe ZAN</td><td>ha</td><td>Quota réglementaire 2021-2031</td><td><span class="badge badge-rouge">ZAN</span></td></tr>
+            <tr><td>% enveloppe utilisée</td><td>%</td><td>Avancement dans le quota ZAN</td><td><span class="badge badge-rouge">ZAN</span></td></tr>
+            <tr><td>Capacité annuelle résiduelle</td><td>ha/an</td><td>Marge de manœuvre annuelle restante</td><td><span class="badge badge-rouge">ZAN</span></td></tr>
+        </table>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 7 — BONNES PRATIQUES -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="bonnes-pratiques">
+        <div class="section-title">
+            <div class="section-num">7</div>
+            <h2>🧠 Bonnes pratiques</h2>
+        </div>
+        <ul style="line-height:2.2;">
+            <li>Toujours utiliser les données les plus récentes disponibles sur data.gouv.fr</li>
+            <li>Vérifier le format du fichier CSV avant chargement</li>
+            <li>Choisir le coefficient ZAN adapté à votre territoire <strong>avant</strong> de générer le rapport PDF</li>
+            <li>Comparer plusieurs périodes pour analyser les tendances (onglet Analyse &amp; Tendances)</li>
+            <li>Interpréter les ratios avec le contexte local : un ratio élevé peut s'expliquer par la géographie, l'histoire ou la vocation économique du territoire</li>
+            <li>En mode SCoT ou EPCI, utiliser le zoom commune pour entrer dans le détail d'une commune membre</li>
+        </ul>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 8 — LIMITES -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="limites">
+        <div class="section-title">
+            <div class="section-num">8</div>
+            <h2>⚠️ Limites de l'outil</h2>
+        </div>
+        <ul style="line-height:2.2;">
+            <li>Dépendance à la qualité et à la complétude des données sources CEREMA</li>
+            <li>Les projections sont des simulations basées sur le rythme actuel — elles ne constituent pas des prévisions certaines</li>
+            <li>Les ratios emploi/activité sont à interpréter avec prudence en cas de perte d'emplois ou d'activités très consommatrices de surface</li>
+            <li>L'outil ne remplace pas une expertise territoriale ni un accompagnement juridique pour la révision des documents d'urbanisme</li>
+            <li>Les données de population et d'emploi proviennent du recensement INSEE 2015 et 2021 — elles peuvent ne pas refléter les évolutions très récentes</li>
+        </ul>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 9 — ASSISTANCE -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="section" id="assistance">
+        <div class="section-title">
+            <div class="section-num">9</div>
+            <h2>🛠️ Assistance &amp; À propos</h2>
+        </div>
+        <p>Un bouton <strong>"Signaler un bug"</strong> est disponible dans la barre latérale de l'application. Vos retours permettent d'améliorer continuellement l'outil.</p>
+        <div class="card" style="margin-top:16px;">
+            <strong>🏛️ À propos</strong><br><br>
+            Cette application est développée et mise à disposition <strong>gratuitement</strong> dans une logique de service public par Philippe PETIT — PPEI (Plateforme Publique d'Échanges et d'Informations).<br><br>
+            Elle s'adresse aux élus locaux, aux services techniques des collectivités et aux citoyens souhaitant comprendre les enjeux de l'artificialisation sur leur territoire.
+        </div>
+    </div>
+
+    <div class="footer">
+        © PPEI – Plateforme Publique d'Échanges et d'Informations &nbsp;|&nbsp; Philippe PETIT &nbsp;|&nbsp; V2.2.0<br>
+        Source des données : CEREMA · Loi n° 2021-1104 du 22 août 2021 (Loi Climat et Résilience)
+    </div>
+
+</div>
+</body>
+</html>
