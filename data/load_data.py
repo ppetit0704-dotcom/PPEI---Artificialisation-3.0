@@ -1,6 +1,6 @@
 """
 @author  : Philippe PETIT
-@version : 3.0.0
+@version : 3.1.0
 @description : Lecture et calcul des données d'artificialisation.
                Version adaptative : utilise core/detecteur.py pour
                s'adapter automatiquement à la structure du fichier CEREMA
@@ -85,16 +85,22 @@ def lire_les_donnees(ligne: pd.Series, struct: dict = None) -> dict:
         # Fallback : reconstitution minimale depuis la ligne seule
         import re
         _RE_FLUX = re.compile(r'^art(\d{2})(act|hab|mix|rou|fer|inc)(\d{2})$')
-        suffixes = sorted(
+        suffixes_all = sorted(
             {(m.group(1), m.group(3))
              for col in ligne.index
              if (m := _RE_FLUX.match(str(col)))},
             key=lambda x: int(x[1])
         )
-        n = len(suffixes)
+        # On ignore explicitement les flux avant 2011 (09,10)
+        suffixes_all = [(a, b) for (a, b) in suffixes_all if int(a) >= 11]
+
+        n = len(suffixes_all)
         # Par défaut : 10 ans de référence, reste = ZAN
-        suffixes_ref = suffixes[:10] if n >= 10 else suffixes
-        suffixes_zan = suffixes[10:] if n > 10 else []
+        suffixes_ref = suffixes_all[:10] if n >= 10 else suffixes_all
+        suffixes_zan = suffixes_all[10:] if n > 10 else []
+
+        suffixes = suffixes_ref + suffixes_zan
+
         col_pop1 = "pop15"; col_pop2 = "pop21"
         col_men1 = "men15"; col_men2 = "men21"
         col_emp1 = "emp15"; col_emp2 = "emp21"
@@ -103,9 +109,13 @@ def lire_les_donnees(ligne: pd.Series, struct: dict = None) -> dict:
         duree_zan = max(len(suffixes_zan), 1)
         annees_restantes = 7
     else:
-        suffixes     = struct["suffixes_all"]
+        # On s'appuie sur la structure détectée
+        # suffixes_all peut contenir des flux antérieurs (09,10),
+        # mais suffixes_ref / suffixes_zan sont déjà calibrés pour 2011–2020 / ZAN.
         suffixes_ref = struct["suffixes_ref"]
         suffixes_zan = struct["suffixes_zan"]
+        suffixes     = suffixes_ref + suffixes_zan
+
         col_pop1   = get_col(struct, "pop1",  "pop15")
         col_pop2   = get_col(struct, "pop2",  "pop21")
         col_men1   = get_col(struct, "men1",  "men15")
@@ -129,17 +139,19 @@ def lire_les_donnees(ligne: pd.Series, struct: dict = None) -> dict:
     my_emp2 = get(col_emp2)
 
     # ── Initialisation des catégories ────────────────────────────
+    # On dimensionne les dicts en fonction du nombre de flux retenus
+    nb_flux = len(suffixes)
     cats = {
-        'act': {i: 0 for i in range(1, len(suffixes) + 3)},
-        'hab': {i: 0 for i in range(1, len(suffixes) + 3)},
-        'mix': {i: 0 for i in range(1, len(suffixes) + 3)},
-        'inc': {i: 0 for i in range(1, len(suffixes) + 3)},
-        'rou': {i: 0 for i in range(1, len(suffixes) + 3)},
-        'fer': {i: 0 for i in range(1, len(suffixes) + 3)},
+        'act': {i: 0 for i in range(1, nb_flux + 3)},
+        'hab': {i: 0 for i in range(1, nb_flux + 3)},
+        'mix': {i: 0 for i in range(1, nb_flux + 3)},
+        'inc': {i: 0 for i in range(1, nb_flux + 3)},
+        'rou': {i: 0 for i in range(1, nb_flux + 3)},
+        'fer': {i: 0 for i in range(1, nb_flux + 3)},
     }
 
     # ── Remplissage dynamique ────────────────────────────────────
-    # Index 3 = premier flux, 4 = deuxième, etc.
+    # Index 3 = premier flux de référence (art11…12), 4 = deuxième, etc.
     for idx, (a, b) in enumerate(suffixes, start=3):
         for suffix, target in cats.items():
             key = f'art{a}{suffix}{b}'
@@ -194,7 +206,7 @@ def lire_les_donnees(ligne: pd.Series, struct: dict = None) -> dict:
         # % artificialisation totale
         "pcent_art_com": get(col_artcom),
 
-        # Paramètres de structure (utiles pour les modules de ratios)
+        # Paramètres de structure (utiles pour les modules de ratios / graphes)
         "suffixes_ref":      suffixes_ref,
         "suffixes_zan":      suffixes_zan,
         "duree_zan":         duree_zan,
