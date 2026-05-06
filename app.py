@@ -11,10 +11,12 @@ from datetime import datetime
 from pathlib import Path
 import urllib.parse
 import webbrowser
+
 from ui.utilitaires import get_coords_from_insee
 from ui.sidebar import rendu_sidebar, MODE_COMMUNE, MODE_EPCI, MODE_SCOT
+
 from graphs.grap_export_pdf import *
-from graphs.graph_epci_general import rendu_general_epci, agreger_epci, agreger_flux_annuels
+from graphs.graph_epci_general import rendu_general_epci, agreger_epci
 from graphs.graph_epci_synthese import rendu_synthese_epci
 from graphs.graph_epci_analyse import rendu_analyse_epci
 from graphs.graph_epci_ratios import rendu_ratios_epci
@@ -38,6 +40,10 @@ from core.loader import load_csv
 from graphs.graph_synthese import rendu_graph_synthese
 from graphs.graph_analyse import rendu_graph_analyse
 from graphs.graph_ratios import rendu_ratios
+from graphs.graph_epci_general import _bloc_identite_territoriale
+from graphs.graph_scot import _bloc_identite_territoriale
+
+
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -117,6 +123,7 @@ def rendu_general(code_insee):
     col_epci     = get_col(struct, "epci",     "epci24")
     col_epci_txt = get_col(struct, "epci_txt", "epci24txt")
 
+
     if code_insee:
         commune = df[df["idcom"] == code_insee]
 
@@ -151,10 +158,10 @@ def rendu_general(code_insee):
 from data.load_data import lire_les_donnees
 
 
-
 # =====================================================
 # ONGLET — SYNTHÈSE
 # =====================================================
+
 def _to_float(x):
     if x is None:
         return 0.0
@@ -239,11 +246,11 @@ def rendu_synthese(code_insee):
             for k in KEYS
         ],
         f"{lbl_ref} (ha)": [
-        fmt_ha(m2_to_ha(sum(
-            _to_float(donnees[k].get(i, 0))
-            for i in range(idx_ref_debut, idx_ref_fin)
-        ))) 
-        for k in KEYS
+            fmt_ha(m2_to_ha(sum(
+                _to_float(donnees[k].get(i, 0))
+                for i in range(idx_ref_debut, idx_ref_fin)
+            ))) 
+            for k in KEYS
         ],
         f"{lbl_zan} (ha)": [
             fmt_ha(m2_to_ha(sum(
@@ -260,8 +267,6 @@ def rendu_synthese(code_insee):
 
     # ─── Graphiques ─────────────────────────────────────────
     rendu_graph_synthese(donnees)
-
-
 
 # =====================================================
 # MAIN
@@ -291,7 +296,7 @@ def main():
         url_maps2 = f"mailto:philippe.petit.lafiou@outlook.fr?subject={subject_encoded}&body={body_encoded}"
         st.sidebar.markdown(f"[🗺️ Signaler un bug]({url_maps2})")
 
-        # Chargement du fichier CSV (inchangé)
+        # Chargement du fichier CSV
         with st.expander("📂 Chargement des données", expanded=True):
             file = st.file_uploader("📁 Fichier CSV", type="csv")
             if file:
@@ -311,7 +316,7 @@ def main():
             0.625, 0.620, 0.615, 0.610, 0.607, 0.605, 0.600,
             0.575, 0.550, 0.525, 0.500, 0.475, 0.450, 0.425, 0.400, 0.375,
         ]
-        idx_traj       = st.session_state.get("trajectoire_select", 10)  # défaut 50 %
+        idx_traj        = st.session_state.get("trajectoire_select", 10)  # défaut 50 %
         coeff_reduction = TRAJECTOIRES_COEFFS[idx_traj]
 
     # ─── Extraction du contexte ──────────────────────────────────
@@ -320,6 +325,7 @@ def main():
     ligne      = ctx["ligne"]        # pd.Series ou None
     label      = ctx["label"]        # nom affiché
     df         = st.session_state["df"]
+    struct     = st.session_state.get("struct", {})
 
     # code_insee : défini uniquement si une commune est sélectionnée
     code_insee = ctx.get("zoom_insee") or (ctx["code"] if mode == MODE_COMMUNE else None)
@@ -355,9 +361,15 @@ def main():
         if commune_ok:
             rendu_general(code_insee)
         elif valide and niveau == "epci":
-            rendu_general_epci(ctx["communes"], coeff_reduction)
+            #_bloc_identite_territoriale(ctx["communes"])
+            st.divider()
+            rendu_general_epci(ctx["communes"], struct)
+
         elif valide and niveau == "scot":
-            rendu_general_scot(ctx["communes"], coeff_reduction)
+            #_bloc_identite_territoriale(ctx["communes"])
+            st.divider()
+            rendu_general_scot(ctx["communes"], struct, coeff_reduction)
+
         else:
             st.info(MSG_ATTENTE)
 
@@ -366,9 +378,9 @@ def main():
             st.subheader(label)
             rendu_synthese(code_insee)
         elif valide and niveau == "epci":
-            rendu_synthese_epci(ctx["communes"], coeff_reduction)
+            rendu_synthese_epci(ctx["communes"], struct)
         elif valide and niveau == "scot":
-            rendu_synthese_scot(ctx["communes"], coeff_reduction)
+            rendu_synthese_scot(ctx["communes"],struct, coeff_reduction)
         else:
             st.info(MSG_ATTENTE)
 
@@ -379,9 +391,9 @@ def main():
             donnees = lire_les_donnees(ligne, struct)
             rendu_graph_analyse(donnees)
         elif valide and niveau == "epci":
-            rendu_analyse_epci(ctx["communes"])
+            rendu_analyse_epci(ctx["communes"], struct)
         elif valide and niveau == "scot":
-            rendu_analyse_scot(ctx["communes"])
+            rendu_analyse_scot(ctx["communes"], struct)
         else:
             st.info(MSG_ATTENTE)
 
@@ -390,9 +402,9 @@ def main():
             st.subheader(label)
             rendu_ratios(code_insee)
         elif valide and niveau == "epci":
-            rendu_ratios_epci(ctx["communes"])
+            rendu_ratios_epci(ctx["communes"], struct)
         elif valide and niveau == "scot":
-            rendu_ratios_scot(ctx["communes"])
+            rendu_ratios_scot(ctx["communes"], struct)
         else:
             st.info(MSG_ATTENTE)
 
@@ -400,9 +412,9 @@ def main():
         if commune_ok:
             rendu_export_pdf(code_insee)
         elif valide and niveau == "epci":
-            rendu_export_pdf_epci(ctx["communes"])
+            rendu_export_pdf_epci(ctx["communes"], struct)
         elif valide and niveau == "scot":
-            rendu_export_pdf_scot(ctx["communes"])
+            rendu_export_pdf_scot(ctx["communes"], struct)
         else:
             st.info(MSG_ATTENTE)
 
