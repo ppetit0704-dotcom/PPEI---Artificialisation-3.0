@@ -1,327 +1,397 @@
 """
 @author  : Philippe PETIT
-@version : 1.0.0
-@description : Module SCoT — Adaptateur au-dessus des modules EPCI.
-               La logique d'agrégation est identique (somme de communes),
-               seuls les libellés, titres et recommandations sont adaptés
-               à l'échelle SCoT (DOO, porter-à-connaissance, etc.).
+@version : 3.0.0
+@description : Module SCOT — version premium, dynamique, cohérente avec agreger_epci(),
+               avec prise en compte du coefficient de réduction choisi par l'utilisateur.
 """
 
-import io
-from datetime import datetime
-from pathlib import Path
-
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# ── Réutilisation intégrale des modules EPCI ─────────────────────
-from graphs.graph_epci_general  import (
-    agreger_epci, agreger_flux_annuels,
-    _construire_tableau_communes,
-    _fha, _fpct, _fint,
-    rendu_general_epci,
-)
-from graphs.graph_epci_synthese import rendu_synthese_epci
-from graphs.graph_epci_analyse  import rendu_analyse_epci
-from graphs.graph_epci_ratios   import rendu_ratios_epci, calculer_ratios_epci
-
-# ── Helpers PDF ──────────────────────────────────────────────────
-from graphs.graph_export_pdf import (
-    W, H, MARGIN,
-    C_DARK, C_PRIMARY, C_ACCENT, C_MID, C_WHITE, C_LIGHT,
-    _fm2, _fval,
-    _make_styles, _metric_table, _data_table,
-    _img_from_bytes, _plotly_to_png, _HeaderFooterCanvas,
-)
-from graphs.graph_export_pdf_epci import (
-    _fig_flux_epci, _fig_donut_epci, _fig_top10,
-    _fig_jauge_epci, _fig_projection_epci, _fig_zan_communes,
-    generer_rapport_pdf_epci,   # réutilisé avec paramètre niveau="scot"
-)
-
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.platypus import (
-    BaseDocTemplate, Frame, HRFlowable, Image,
-    NextPageTemplate, PageBreak, PageTemplate,
-    Paragraph, Spacer, Table, TableStyle,
-)
+from graphs.graph_epci_general import agreger_epci
 
 
-# ─────────────────────────────────────────────────────────────────
-#  UTILITAIRES LOCAUX
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
+#  CONSTANTES
+# ───────────────────────────────────────────────────────────────
 
-def _fint(v):
-    if v is None: return "N/D"
-    try: return f"{int(v):,}".replace(",", " ")
-    except: return "N/D"
+CATEGORIES = [
+    ("habitat",     "Habitat",      "#3B82F6"),
+    ("activite",    "Activité",     "#F59E0B"),
+    ("mixte",       "Mixte",        "#8B5CF6"),
+    ("route",       "Route",        "#6B7280"),
+    ("ferroviaire", "Ferroviaire",  "#EC4899"),
+    ("inconnu",     "Inconnu",      "#D1D5DB"),
+]
+
+M2_HA = 10_000.0
 
 
-# ─────────────────────────────────────────────────────────────────
-#  ONGLET GÉNÉRAL SCOT
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
+#  OUTILS DE FORMATAGE ROBUSTES
+# ───────────────────────────────────────────────────────────────
 
-def rendu_general_scot(communes: pd.DataFrame, coeff_reduction: float = 0.5):
-    """
-    Vue Général à l'échelle SCoT.
-    Réutilise rendu_general_epci avec un titre adapté +
-    un tableau des EPCI membres en plus.
-    """
+def _safe_to_int(x):
+    if x is None:
+        return None
+    try:
+        s = str(x).replace("\u202f", "").replace(" ", "").replace(",", ".").strip()
+        return int(float(s))
+    except:
+        return None
+
+def _safe_to_float(x):
+    if x is None:
+        return None
+    try:
+        s = str(x).replace("\u202f", "").replace(" ", "").replace(",", ".").strip()
+        return float(s)
+    except:
+        return None
+
+def _fmt_ha(m2):
+    if m2 is None:
+        return "N/D"
+    return f"{m2 / M2_HA:.2f} ha".replace(".", ",")
+
+def _fmt_pct(x):
+    if x is None:
+        return "N/D"
+    return f"{x:.1f} %".replace(".", ",")
+
+
+# ───────────────────────────────────────────────────────────────
+#  IDENTITÉ TERRITORIALE (VERSION PREMIUM)
+# ───────────────────────────────────────────────────────────────
+def _bloc_identite_territoriale(communes):
+    ligne0 = communes.iloc[0]
+
+    nom = ligne0.get("scot", "SCoT")
+
+    # --- Départements multiples ---
+    depts = (
+        communes["iddeptxt"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+        .tolist()
+    )
+    dept_txt = ", ".join(sorted(depts)) if depts else "N/D"
+
+    # --- Régions multiples ---
+    regions = (
+        communes["idregtxt"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+        .tolist()
+    )
+    region_txt = ", ".join(sorted(regions)) if regions else "N/D"
+
+    nb_com = len(communes)
+
+    # Population totale
+    pop_vals = communes["pop21"].apply(_safe_to_int)
+    pop_tot = pop_vals.sum() if pop_vals.notna().any() else None
+    pop_txt = "N/D" if pop_tot is None else f"{pop_tot:,d}".replace(",", "\u202f")
+
+    # Emplois totaux
+    emp_vals = communes["emp21"].apply(_safe_to_int)
+    emplois = emp_vals.sum() if emp_vals.notna().any() else None
+    emp_txt = "N/D" if emplois is None else f"{emplois:,d}".replace(",", "\u202f")
+
+    # Surface totale
+    surf_vals = communes["surfcom2024"].apply(_safe_to_float)
+    surf_m2 = surf_vals.sum() if surf_vals.notna().any() else None
+    surf_ha = surf_m2 / 10_000 if surf_m2 is not None else None
+    surf_txt = (
+        f"{surf_ha:,.2f} ha".replace(",", "\u202f").replace(".", ",")
+        if surf_ha is not None else "N/D"
+    )
+
+    st.markdown("### 🏛️ Identité du territoire")
+    st.markdown(
+        f"""
+        <div style="padding:18px; border:1px solid #ddd; border-radius:10px; background:#fafafa;color:blue;">
+            <b>Nom :</b> {nom}<br>
+            <b>Département(s) :</b> {dept_txt}<br>
+            <b>Région(s) :</b> {region_txt}<br>
+            <br>
+            <b>Communes membres :</b> {nb_com}<br>
+            <b>Population 2021 :</b> {pop_txt} hab.<br>
+            <b>Emplois 2021 :</b> {emp_txt}<br>
+            <b>Surface totale :</b> {surf_txt}<br>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# ───────────────────────────────────────────────────────────────
+#  CALCULS CATÉGORIES
+# ───────────────────────────────────────────────────────────────
+
+def _compute_totaux_par_categorie(flux: dict):
+    totaux = {k: 0.0 for k, _, _ in CATEGORIES}
+    totaux_ref = {k: 0.0 for k, _, _ in CATEGORIES}
+    totaux_zan = {k: 0.0 for k, _, _ in CATEGORIES}
+
+    for an, data in flux.items():
+        try:
+            a = int(an)
+        except:
+            continue
+
+        for key, _, _ in CATEGORIES:
+            val = data.get(key, 0.0) or 0.0
+            totaux[key] += val
+            if 2011 <= a <= 2020:
+                totaux_ref[key] += val
+            if 2021 <= a <= 2024:
+                totaux_zan[key] += val
+
+    return totaux, totaux_ref, totaux_zan
+
+
+# ───────────────────────────────────────────────────────────────
+#  GRAPHIQUES
+# ───────────────────────────────────────────────────────────────
+
+def _graph_barres(flux: dict) -> go.Figure:
+    annees = sorted(flux.keys())
+    fig = go.Figure()
+
+    for key, label, col in CATEGORIES:
+        vals = [(flux[a].get(key, 0.0) / M2_HA) for a in annees]
+        fig.add_trace(go.Bar(name=label, x=annees, y=vals, marker_color=col))
+
+    fig.update_layout(
+        barmode="stack",
+        title="Consommation annuelle agrégée (ha/an)",
+        height=380,
+        margin=dict(l=40, r=20, t=60, b=40),
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def _graph_donut(totaux_cat: dict) -> go.Figure:
+    labels = [label for _, label, _ in CATEGORIES]
+    values = [totaux_cat[k] / M2_HA for k, _, _ in CATEGORIES]
+    colors = [col for _, _, col in CATEGORIES]
+
+    fig = go.Figure(go.Pie(
+        labels=labels,
+        values=values,
+        hole=0.52,
+        marker=dict(colors=colors),
+        textinfo="label+percent",
+    ))
+    fig.update_layout(
+        title="Répartition totale par catégorie (2009–2024)",
+        height=360,
+        margin=dict(l=20, r=20, t=60, b=20),
+        showlegend=False,
+    )
+    return fig
+
+
+# ───────────────────────────────────────────────────────────────
+#  RENDU — GÉNÉRAL SCOT
+# ───────────────────────────────────────────────────────────────
+
+def rendu_general_scot(communes: pd.DataFrame, struct: dict, coeff_reduction: float):
+
     if communes.empty:
         st.warning("Aucune donnée disponible pour ce SCoT.")
         return
 
-    ligne0   = communes.iloc[0]
-    nom_scot = str(ligne0.get("scot", "SCoT"))
+    agg = agreger_epci(communes, struct)
+    flux = agg["flux"]
 
-    # ── Gestion multi-département / multi-région ─────────────────
-    deps    = communes["iddeptxt"].dropna().unique().tolist()
-    regions = communes["idregtxt"].dropna().unique().tolist()
-    dep     = " · ".join(sorted(deps))
-    region  = " · ".join(sorted(regions))
+    conso_ref = agg["totaux"]["ref"]
+    conso_zan = agg["totaux"]["zan"]
+    enveloppe_m2 = conso_ref * coeff_reduction
+    pct_enveloppe = (conso_zan / enveloppe_m2 * 100) if enveloppe_m2 > 0 else None
 
-    agg      = agreger_epci(communes)
-    nb_epci  = communes["epci24txt"].nunique()
+    totaux_cat, _, _ = _compute_totaux_par_categorie(flux)
 
-    st.markdown(f"## 🗺️ {nom_scot}")
+    ligne0 = communes.iloc[0]
+    nom_scot = ligne0.get("scot", "SCoT")
 
-    # Caption adapté selon multi-dep/région
-    caption_parts = [f"{len(communes)} communes", f"{nb_epci} EPCI/CC"]
-    if len(deps) > 1:
-        caption_parts.append(f"Départements : {dep}")
-    else:
-        caption_parts.append(dep)
-    if len(regions) > 1:
-        caption_parts.append(f"Régions : {region}")
-    else:
-        caption_parts.append(region)
-    st.caption("  |  ".join(caption_parts))
+    st.markdown(f"## 🏛️ Général — {nom_scot}")
     st.divider()
 
-    # ── Résumé EPCI membres ──────────────────────────────────────
-    st.markdown("### 🏛️ Intercommunalités membres du SCoT")
+    _bloc_identite_territoriale(communes)
+    st.divider()
 
-    epci_rows = []
-    for epci_nom, grp in communes.groupby("epci24txt"):
-        conso = sum(
-            grp.get(f"art{a:02d}{cat}{b:02d}", pd.Series(0)).apply(
-                pd.to_numeric, errors="coerce").fillna(0).sum()
-            for a, b in zip(range(9,24), range(10,25))
-            for cat in ["act","hab","mix","rou","fer","inc"]
-        )
-        deps_epci = " · ".join(sorted(grp["iddeptxt"].dropna().unique().tolist()))
-        epci_rows.append({
-            "EPCI / CC":       epci_nom,
-            "SIRET":           str(grp.iloc[0].get("epci24","")),
-            "Département(s)":  deps_epci,
-            "Communes":        len(grp),
-            "Pop. 2021":       int(grp["pop21"].apply(pd.to_numeric, errors="coerce").sum()),
-            "Conso totale":    f"{conso/10_000:.2f} ha".replace(".", ","),
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Consommation totale 2009–2024", _fmt_ha(agg["totaux"]["total"]))
+    c2.metric("Référence 2011–2020",           _fmt_ha(conso_ref))
+    c3.metric("ZAN 2021–2024",                 _fmt_ha(conso_zan))
+    c4.metric(f"% enveloppe ({coeff_reduction:.2f}× réf.)", _fmt_pct(pct_enveloppe))
+
+    st.divider()
+
+    col_g, col_d = st.columns([2, 1])
+    col_g.plotly_chart(_graph_barres(flux), use_container_width=True, key="scot_general_barres")
+    col_d.plotly_chart(_graph_donut(totaux_cat), use_container_width=True, key="scot_general_donut")
+
+
+# ───────────────────────────────────────────────────────────────
+#  RENDU — SYNTHÈSE SCOT
+# ───────────────────────────────────────────────────────────────
+
+def rendu_synthese_scot(communes: pd.DataFrame, struct: dict, coeff_reduction: float):
+
+    if communes.empty:
+        st.warning("Aucune donnée disponible pour ce SCoT.")
+        return
+
+    agg = agreger_epci(communes, struct)
+    flux = agg["flux"]
+
+    conso_ref = agg["totaux"]["ref"]
+    conso_zan = agg["totaux"]["zan"]
+    enveloppe_m2 = conso_ref * coeff_reduction
+    pct_enveloppe = (conso_zan / enveloppe_m2 * 100) if enveloppe_m2 > 0 else None
+
+    totaux_cat, totaux_ref_cat, totaux_zan_cat = _compute_totaux_par_categorie(flux)
+
+    ligne0 = communes.iloc[0]
+    nom_scot = ligne0.get("scot", "SCoT")
+
+    st.markdown(f"## 📐 Synthèse — {nom_scot}")
+    st.divider()
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Consommation totale 2009–2024", _fmt_ha(agg["totaux"]["total"]))
+    c2.metric("Référence 2011–2020",           _fmt_ha(conso_ref))
+    c3.metric("ZAN 2021–2024",                 _fmt_ha(conso_zan))
+    c4.metric(f"% enveloppe ({coeff_reduction:.2f}× réf.)", _fmt_pct(pct_enveloppe))
+
+    st.divider()
+
+    rows = []
+    for key, label, _ in CATEGORIES:
+        rows.append({
+            "Catégorie": label,
+            "Total 2009–2024": _fmt_ha(totaux_cat[key]),
+            "2011–2020 (réf.)": _fmt_ha(totaux_ref_cat[key]),
+            "2021–2024 (ZAN)": _fmt_ha(totaux_zan_cat[key]),
         })
 
-    df_epci = pd.DataFrame(epci_rows).sort_values("EPCI / CC")
-    st.dataframe(df_epci, use_container_width=True, hide_index=True)
-    st.divider()
-
-    # ── Métriques agrégées SCoT ──────────────────────────────────
-    st.markdown("### 📊 Indicateurs clés agrégés SCoT")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Communes membres",       len(communes))
-    c2.metric("EPCI / CC membres",      nb_epci)
-    c3.metric("Population 2021",        _fint(agg["pop21"]) + " hab.")
-    c4.metric("Surface totale",         _fha(agg["surf_ha"], 0))
-
-    c5, c6, c7, c8 = st.columns(4)
-    c5.metric("Consommation 2009-2024", _fha(agg["conso_tot_ha"]))
-    c6.metric("Référence 2011-2020",    _fha(agg["conso_ref_ha"]))
-    c7.metric("ZAN 2021-2024",          _fha(agg["conso_zan_ha"]))
-    c8.metric("% territoire artificialisé", _fpct(agg["pct_artificialise"]))
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
     st.divider()
 
-    # ── Tableau communes (même que EPCI) ─────────────────────────
-    st.markdown("### 🗂️ Communes membres — vue détaillée")
-    from graphs.graph_epci_general import (
-        _construire_tableau_communes, _graph_top10, _graph_zan_communes
-    )
-    df_tab = _construire_tableau_communes(communes, coeff_reduction)
-
-    nb_rouge  = (df_tab["_alerte"] == "🔴").sum()
-    nb_orange = (df_tab["_alerte"] == "🟠").sum()
-    nb_vert   = (df_tab["_alerte"] == "🟢").sum()
-
-    ca, cb, cc = st.columns(3)
-    ca.metric("🔴 Enveloppe dépassée",  nb_rouge)
-    cb.metric("🟠 Vigilance ZAN",       nb_orange)
-    cc.metric("🟢 Situation favorable", nb_vert)
-
-    df_affiche = df_tab.drop(columns=["_alerte"]).copy()
-    df_affiche.insert(0, "ZAN", df_tab["_alerte"])
-    for col in ["Conso totale","Réf. 2011-2020","ZAN 2021-2024","Enveloppe ZAN"]:
-        df_affiche[col] = df_affiche[col].apply(
-            lambda v: f"{v:.2f} ha".replace(".", ",") if pd.notna(v) else "N/D")
-    df_affiche["% enveloppe"] = df_affiche["% enveloppe"].apply(
-        lambda v: f"{v:.1f} %".replace(".", ",") if pd.notna(v) else "N/D")
-    df_affiche["Pop. 2021"] = df_affiche["Pop. 2021"].apply(
-        lambda v: f"{v:,}".replace(",", " "))
-
-    st.dataframe(df_affiche, use_container_width=True, hide_index=True)
-    st.divider()
-
-    st.markdown("### 📈 Visualisations")
-    col_g, col_d = st.columns(2)
-    with col_g:
-        st.plotly_chart(_graph_top10(df_tab), use_container_width=True)
-    with col_d:
-        st.plotly_chart(_graph_zan_communes(df_tab), use_container_width=True)
+    col_g, col_d = st.columns([2, 1])
+    col_g.plotly_chart(_graph_barres(flux), use_container_width=True, key="scot_synthese_barres")
+    col_d.plotly_chart(_graph_donut(totaux_cat), use_container_width=True, key="scot_synthese_donut")
 
 
-# ─────────────────────────────────────────────────────────────────
-#  ONGLETS SYNTHÈSE / ANALYSE / RATIOS SCOT
-#  → Délégation aux modules EPCI avec injection du nom SCoT
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
+#  RENDU — ANALYSE SCOT
+# ───────────────────────────────────────────────────────────────
 
-def _communes_avec_nom_scot(communes: pd.DataFrame) -> pd.DataFrame:
-    """
-    Remplace epci24txt par le nom du SCoT sur TOUTES les lignes
-    du DataFrame, pour que les modules EPCI affichent le bon nom.
-    La colonne epci24txt_orig est conservée pour les tableaux.
-    """
-    communes = communes.copy()
-    nom_scot = str(communes.iloc[0].get("scot", "SCoT"))
-    communes["epci24txt_orig"] = communes["epci24txt"]   # sauvegarde
-    communes["epci24txt"]      = nom_scot                # injection
-    return communes
+def rendu_analyse_scot(communes: pd.DataFrame, struct: dict):
 
-
-def rendu_synthese_scot(communes: pd.DataFrame, coeff_reduction: float = 0.5):
-    """Synthèse SCoT — délègue à rendu_synthese_epci avec nom SCoT."""
-    if communes.empty:
-        st.warning("Aucune donnée."); return
-    rendu_synthese_epci(_communes_avec_nom_scot(communes), coeff_reduction)
-
-
-def rendu_analyse_scot(communes: pd.DataFrame):
-    """Analyse & Tendances SCoT — délègue à rendu_analyse_epci."""
-    if communes.empty:
-        st.warning("Aucune donnée."); return
-    rendu_analyse_epci(_communes_avec_nom_scot(communes))
-
-
-def rendu_ratios_scot(communes: pd.DataFrame):
-    """Ratios SCoT — délègue à rendu_ratios_epci."""
-    if communes.empty:
-        st.warning("Aucune donnée."); return
-    rendu_ratios_epci(_communes_avec_nom_scot(communes))
-
-
-# ─────────────────────────────────────────────────────────────────
-#  EXPORT PDF SCOT
-#  → Réutilise generer_rapport_pdf_epci avec textes SCoT
-# ─────────────────────────────────────────────────────────────────
-
-def generer_rapport_pdf_scot(communes: pd.DataFrame,
-                              coeff_reduction: float = 0.5) -> bytes:
-    """
-    Génère le rapport PDF à l'échelle SCoT.
-    Réutilise intégralement la maquette du rapport EPCI,
-    en substituant les libellés SCoT.
-    """
-    if communes.empty:
-        raise ValueError("Aucune commune pour ce SCoT.")
-
-    nom_scot = str(communes.iloc[0].get("scot", "SCoT"))
-    nb_epci  = communes["epci24txt"].nunique()
-
-    # On substitue epci24txt par le nom du SCoT pour que
-    # generer_rapport_pdf_epci affiche le bon nom partout
-    communes_mod = communes.copy()
-    communes_mod["epci24txt"] = nom_scot
-    # On met le nb d'EPCI en caption via le champ scot (pas utilisé dans le PDF EPCI)
-    communes_mod["epci24"] = f"SCoT — {nb_epci} EPCI/CC membres"
-
-    return generer_rapport_pdf_epci(communes_mod, coeff_reduction)
-
-
-def rendu_export_pdf_scot(communes: pd.DataFrame):
-    """Point d'entrée Streamlit — Export PDF SCoT."""
     if communes.empty:
         st.warning("Aucune donnée disponible pour ce SCoT.")
         return
 
-    nom_scot = str(communes.iloc[0].get("scot", "SCoT"))
-    nb       = len(communes)
-    nb_epci  = communes["epci24txt"].nunique()
+    agg = agreger_epci(communes, struct)
+    flux = agg["flux"]
 
-    TRAJECTOIRES = [
-        (0.625,"62,5 %"),(0.620,"62,0 %"),(0.615,"61,5 %"),(0.610,"61,0 %"),
-        (0.607,"60,7 % — SRADDET Occitanie"),(0.605,"60,5 %"),(0.600,"60,0 %"),
-        (0.575,"57,5 %"),(0.550,"55,0 %"),(0.525,"52,5 %"),
-        (0.500,"50,0 % — Loi Climat (défaut)"),(0.475,"47,5 %"),(0.450,"45,0 %"),
-        (0.425,"42,5 %"),(0.400,"40,0 %"),(0.375,"37,5 %"),
+    totaux_cat, totaux_ref_cat, totaux_zan_cat = _compute_totaux_par_categorie(flux)
+
+    ligne0 = communes.iloc[0]
+    nom_scot = ligne0.get("scot", "SCoT")
+
+    st.markdown(f"## 📈 Analyse — {nom_scot}")
+    st.divider()
+
+    st.markdown("### 📉 Tendances annuelles")
+    st.plotly_chart(_graph_barres(flux), use_container_width=True, key="scot_analyse_barres")
+
+    st.divider()
+
+    rows = []
+    for key, label, _ in CATEGORIES:
+        r_ref = (totaux_ref_cat[key] / 10) / M2_HA
+        r_zan = (totaux_zan_cat[key] / 4) / M2_HA
+        evol = ((r_zan - r_ref) / r_ref * 100) if r_ref > 0 else None
+
+        rows.append({
+            "Catégorie": label,
+            "Rythme réf. (ha/an)": f"{r_ref:.2f}".replace(".", ","),
+            "Rythme ZAN (ha/an)": f"{r_zan:.2f}".replace(".", ","),
+            "Évolution (%)": _fmt_pct(evol),
+        })
+
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+# ───────────────────────────────────────────────────────────────
+#  RENDU — RATIOS SCOT
+# ───────────────────────────────────────────────────────────────
+
+def rendu_ratios_scot(communes: pd.DataFrame, struct: dict):
+
+    if communes.empty:
+        st.warning("Aucune donnée disponible pour ce SCoT.")
+        return
+
+    agg = agreger_epci(communes, struct)
+
+    ligne0 = communes.iloc[0]
+    nom_scot = ligne0.get("scot", "SCoT")
+
+    st.markdown(f"## 📊 Ratios — {nom_scot}")
+    st.divider()
+
+    rows = [
+        {"Ratio": "m² / hab (total)", "Valeur": (agg["m2_hab_total"])},
+        {"Ratio": "m² / hab (réf.)",   "Valeur":(agg["m2_hab_ref"])},
+        {"Ratio": "m² / hab (ZAN)",    "Valeur":(agg["m2_hab_zan"])},
+        {"Ratio": "ha / hab",          "Valeur":(agg["ha_par_hab"])},
+        {"Ratio": "m² activité / emploi", "Valeur": (agg["m2_act_par_emploi"])},
     ]
-    idx_traj  = st.session_state.get("trajectoire_select", 10)
-    coeff_sel = TRAJECTOIRES[idx_traj][0]
-    label_sel = TRAJECTOIRES[idx_traj][1]
-    pct_sel   = coeff_sel * 100
-    facteur   = round(1.0 - coeff_sel, 3)
 
-    st.markdown("## 📄 Export PDF — Rapport SCoT")
-    st.markdown(
-        f"Rapport **multi-pages A4** pour le SCoT **{nom_scot}** "
-        f"({nb} communes  |  {nb_epci} EPCI/CC membres) :")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("""
-- ✅ Couverture SCoT personnalisée
-- ✅ Identité SCoT + tableau EPCI membres
-- ✅ Métriques agrégées SCoT
-- ✅ Graphiques flux annuels agrégés
-        """)
-    with col2:
-        st.markdown("""
-- ✅ Top 10 communes + trajectoires ZAN
-- ✅ Ratios analytiques SCoT
-- ✅ Bilan ZAN SCoT — jauge + projection
-- ✅ Conclusion & recommandations DOO
-        """)
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-    st.divider()
-    st.info(
-        f"📐 **Coefficient ZAN : −{pct_sel:.1f} %** ({label_sel}) — "
-        f"Enveloppe SCoT = conso 2011-2020 × {facteur}\n\n"
-        "_Modifiez-le dans l'onglet **Analyse & Tendances**._"
-    )
+
+# ───────────────────────────────────────────────────────────────
+#  RENDU — EXPORT PDF SCOT
+# ───────────────────────────────────────────────────────────────
+
+def rendu_export_pdf_scot(communes: pd.DataFrame, struct: dict):
+
+    if communes.empty:
+        st.warning("Aucune donnée disponible pour ce SCoT.")
+        return
+
+    agg = agreger_epci(communes, struct)
+    flux = agg["flux"]
+    totaux_cat, _, _ = _compute_totaux_par_categorie(flux)
+
+    ligne0 = communes.iloc[0]
+    nom_scot = ligne0.get("scot", "SCoT")
+
+    st.markdown(f"## 📄 Export PDF — {nom_scot}")
+    st.caption("Imprimez cette page en PDF via votre navigateur.")
     st.divider()
 
-    if st.button("🚀 Générer le rapport PDF SCoT",
-                 type="primary", use_container_width=True):
-        with st.spinner(
-            f"Génération pour {nb} communes ({nb_epci} EPCI)… "
-            "agrégation, graphiques, mise en page…"
-        ):
-            try:
-                pdf_bytes = generer_rapport_pdf_scot(communes, coeff_sel)
-                nom_fichier = (
-                    f"rapport_artificialisation_SCoT_"
-                    f"{nom_scot.replace(' ','_')[:40]}_"
-                    f"{datetime.now().strftime('%Y%m%d')}.pdf"
-                )
-                st.success(f"✅ Rapport SCoT généré ! ({len(pdf_bytes)//1024} Ko)")
-                st.download_button(
-                    label="⬇️ Télécharger le rapport PDF SCoT",
-                    data=pdf_bytes,
-                    file_name=nom_fichier,
-                    mime="application/pdf",
-                    use_container_width=True,
-                )
-            except Exception as e:
-                st.error(f"❌ Erreur : {e}")
-                raise
+    st.markdown(f"""
+    <div style="padding:40px; border:2px solid #ccc; border-radius:12px; margin-bottom:40px;">
+        <h1 style="text-align:center; margin-bottom:0;">Synthèse SCoT</h1>
+        <h2 style="text-align:center; margin-top:5px; color:#555;">{nom_scot}</h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.plotly_chart(_graph_barres(flux), use_container_width=True, key="scot_pdf_barres")
+    st.plotly_chart(_graph_donut(totaux_cat), use_container_width=True, key="scot_pdf_donut")

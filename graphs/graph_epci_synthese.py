@@ -1,29 +1,19 @@
 """
 @author  : Philippe PETIT
-@version : 1.0.0
-@description : Module d'agrégation intercommunale — Onglet Synthèse EPCI.
-               Tableau par catégorie agrégé + graphiques barres empilées et donut.
+@version : 2.0.0
+@description : Synthèse intercommunale — version dynamique alignée sur agreger_epci().
 """
 
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
-from graphs.graph_epci_general import (
-    agreger_epci,
-    agreger_flux_annuels,
-    _REF_SUFFIXES,
-    _ZAN_SUFFIXES,
-    _fha,
-    _fpct,
-    _fint,
-)
+from graphs.graph_epci_general import agreger_epci
 
 
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
 #  CONSTANTES
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
 
 CATEGORIES = [
     ("habitat",     "Habitat",      "#3B82F6"),
@@ -34,18 +24,64 @@ CATEGORIES = [
     ("inconnu",     "Inconnu",      "#D1D5DB"),
 ]
 
+M2_HA = 10_000.0
 
-# ─────────────────────────────────────────────────────────────────
+
+# ───────────────────────────────────────────────────────────────
+#  OUTILS DE CALCUL
+# ───────────────────────────────────────────────────────────────
+
+def _compute_totaux_par_categorie(flux: dict) -> tuple[dict, dict, dict]:
+    """
+    Calcule, à partir de agg["flux"], les totaux par catégorie :
+      - total 2009–2024
+      - ref 2011–2020
+      - ZAN 2021–2024
+    """
+    totaux = {k: 0.0 for k, _, _ in CATEGORIES}
+    totaux_ref = {k: 0.0 for k, _, _ in CATEGORIES}
+    totaux_zan = {k: 0.0 for k, _, _ in CATEGORIES}
+
+    annees = sorted(flux.keys())
+    for an in annees:
+        try:
+            a = int(an)
+        except Exception:
+            # Si jamais les années sont des strings non numériques, on les ignore
+            continue
+
+        for key, _, _ in CATEGORIES:
+            val = flux.get(an, {}).get(key, 0.0) or 0.0
+            totaux[key] += val
+            if 2011 <= a <= 2020:
+                totaux_ref[key] += val
+            if 2021 <= a <= 2024:
+                totaux_zan[key] += val
+
+    return totaux, totaux_ref, totaux_zan
+
+
+def _fmt_ha(m2: float) -> str:
+    ha = m2 / M2_HA
+    return f"{ha:.2f} ha".replace(".", ",")
+
+
+def _fmt_pct(x: float | None) -> str:
+    if x is None:
+        return "N/D"
+    return f"{x:.1f} %".replace(".", ",")
+
+
+# ───────────────────────────────────────────────────────────────
 #  GRAPHIQUES
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
 
 def _graph_barres(flux: dict) -> go.Figure:
-    """Barres empilées annuelles agrégées."""
     annees = sorted(flux.keys())
-    fig    = go.Figure()
+    fig = go.Figure()
 
     for key, label, col in CATEGORIES:
-        vals = [flux[a][key] / 10_000 for a in annees]
+        vals = [(flux[a].get(key, 0.0) / M2_HA) for a in annees]
         fig.add_trace(go.Bar(
             name=label, x=annees, y=vals,
             marker_color=col,
@@ -59,7 +95,6 @@ def _graph_barres(flux: dict) -> go.Figure:
         yaxis=dict(title="Hectares"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#CCCCCC"),
         height=400,
         margin=dict(l=50, r=20, t=60, b=50),
         hovermode="x unified",
@@ -67,10 +102,9 @@ def _graph_barres(flux: dict) -> go.Figure:
     return fig
 
 
-def _graph_donut(agg: dict) -> go.Figure:
-    """Donut de répartition par catégorie."""
+def _graph_donut(totaux_par_cat: dict) -> go.Figure:
     labels = [label for _, label, _ in CATEGORIES]
-    values = [agg["totaux"][key]["total"] / 10_000 for key, _, _ in CATEGORIES]
+    values = [totaux_par_cat[key] / M2_HA for key, _, _ in CATEGORIES]
     colors = [col for _, _, col in CATEGORIES]
 
     fig = go.Figure(go.Pie(
@@ -81,7 +115,7 @@ def _graph_donut(agg: dict) -> go.Figure:
         hovertemplate="<b>%{label}</b><br>%{value:.2f} ha<br>%{percent}<extra></extra>",
     ))
     fig.update_layout(
-        title="Répartition totale par catégorie",
+        title="Répartition totale par catégorie (2009–2024)",
         height=380,
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
@@ -90,20 +124,17 @@ def _graph_donut(agg: dict) -> go.Figure:
     return fig
 
 
-def _hex_to_rgba(hex_color: str, alpha: float = 0.5) -> str:
-    """Convertit un hex #RRGGBB en rgba(r,g,b,alpha) pour Plotly."""
-    h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return f"rgba({r},{g},{b},{alpha})"
-
-
-def _graph_evolution_periodes(agg: dict) -> go.Figure:
-    """Comparaison référence vs ZAN par catégorie."""
+def _graph_evolution_periodes(totaux_ref_cat: dict, totaux_zan_cat: dict) -> go.Figure:
     labels_cat = [label for _, label, _ in CATEGORIES]
-    vals_ref   = [agg["totaux"][key]["ref"] / 10_000 for key, _, _ in CATEGORIES]
-    vals_zan   = [agg["totaux"][key]["zan"] / 10_000 for key, _, _ in CATEGORIES]
+    vals_ref   = [totaux_ref_cat[key] / M2_HA for key, _, _ in CATEGORIES]
+    vals_zan   = [totaux_zan_cat[key] / M2_HA for key, _, _ in CATEGORIES]
     cols       = [col for _, _, col in CATEGORIES]
-    cols_light = [_hex_to_rgba(c, 0.45) for c in cols]   # version transparente en rgba
+
+    cols_light = []
+    for c in cols:
+        h = c.lstrip("#")
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        cols_light.append(f"rgba({r},{g},{b},0.45)")
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
@@ -121,153 +152,144 @@ def _graph_evolution_periodes(agg: dict) -> go.Figure:
         yaxis_title="Hectares",
         legend=dict(orientation="h", y=1.12),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#CCCCCC"),
         height=360,
         margin=dict(l=50, r=20, t=60, b=40),
     )
     return fig
 
 
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
 #  TABLEAU RÉCAPITULATIF
-# ─────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────
 
-def _tableau_recap(agg: dict) -> pd.DataFrame:
-    m2ha = 10_000
+def _tableau_recap(
+    totaux_cat: dict,
+    totaux_ref_cat: dict,
+    totaux_zan_cat: dict,
+    conso_tot_m2: float,
+    conso_ref_m2: float,
+    conso_zan_m2: float,
+) -> pd.DataFrame:
     rows = []
+
     for key, label, _ in CATEGORIES:
-        tot  = agg["totaux"][key]["total"] / m2ha
-        ref  = agg["totaux"][key]["ref"]   / m2ha
-        zan  = agg["totaux"][key]["zan"]   / m2ha
-        conso_tot = agg["conso_tot_ha"]
-        pct  = tot / conso_tot * 100 if conso_tot > 0 else 0
-        # Évolution rythme : (zan/4) vs (ref/10) en %
-        r_ref = ref / 10 if ref > 0 else 0
-        r_zan = zan / 4  if zan > 0 else 0
+        tot  = totaux_cat[key]      / M2_HA
+        ref  = totaux_ref_cat[key]  / M2_HA
+        zan  = totaux_zan_cat[key]  / M2_HA
+        part = (totaux_cat[key] / conso_tot_m2 * 100) if conso_tot_m2 > 0 else 0.0
+
+        # Rythmes annuels moyens
+        r_ref = (totaux_ref_cat[key] / 10.0) / M2_HA if totaux_ref_cat[key] > 0 else 0.0
+        r_zan = (totaux_zan_cat[key] / 4.0)  / M2_HA if totaux_zan_cat[key] > 0 else 0.0
         evol  = ((r_zan - r_ref) / r_ref * 100) if r_ref > 0 else None
+
         rows.append({
-            "Catégorie":       label,
-            "Total 2009-2024": f"{tot:.2f} ha".replace(".", ","),
-            "2011-2020 (réf.)":f"{ref:.2f} ha".replace(".", ","),
-            "2021-2024 (ZAN)": f"{zan:.2f} ha".replace(".", ","),
-            "Part totale":     f"{pct:.1f} %".replace(".", ","),
-            "Évol. rythme":    (
-                f"{evol:+.1f} %".replace(".", ",") if evol is not None else "N/D"
-            ),
+            "Catégorie":        label,
+            "Total 2009-2024":  f"{tot:.2f} ha".replace(".", ","),
+            "2011-2020 (réf.)": f"{ref:.2f} ha".replace(".", ","),
+            "2021-2024 (ZAN)":  f"{zan:.2f} ha".replace(".", ","),
+            "Part totale":      _fmt_pct(part),
+            "Évol. rythme":     (f"{evol:+.1f} %".replace(".", ",") if evol is not None else "N/D"),
         })
 
     # Ligne TOTAL
-    conso_tot = agg["conso_tot_ha"]
-    conso_ref = agg["conso_ref_ha"]
-    conso_zan = agg["conso_zan_ha"]
-    r_ref_tot = conso_ref / 10 if conso_ref > 0 else 0
-    r_zan_tot = conso_zan / 4  if conso_zan > 0 else 0
+    conso_tot_ha = conso_tot_m2 / M2_HA
+    conso_ref_ha = conso_ref_m2 / M2_HA
+    conso_zan_ha = conso_zan_m2 / M2_HA
+
+    r_ref_tot = (conso_ref_m2 / 10.0) / M2_HA if conso_ref_m2 > 0 else 0.0
+    r_zan_tot = (conso_zan_m2 / 4.0)  / M2_HA if conso_zan_m2 > 0 else 0.0
     evol_tot  = ((r_zan_tot - r_ref_tot) / r_ref_tot * 100) if r_ref_tot > 0 else None
 
     rows.append({
         "Catégorie":        "TOTAL",
-        "Total 2009-2024":  f"{conso_tot:.2f} ha".replace(".", ","),
-        "2011-2020 (réf.)": f"{conso_ref:.2f} ha".replace(".", ","),
-        "2021-2024 (ZAN)":  f"{conso_zan:.2f} ha".replace(".", ","),
+        "Total 2009-2024":  f"{conso_tot_ha:.2f} ha".replace(".", ","),
+        "2011-2020 (réf.)": f"{conso_ref_ha:.2f} ha".replace(".", ","),
+        "2021-2024 (ZAN)":  f"{conso_zan_ha:.2f} ha".replace(".", ","),
         "Part totale":      "100,0 %",
-        "Évol. rythme":     (
-            f"{evol_tot:+.1f} %".replace(".", ",") if evol_tot is not None else "N/D"
-        ),
+        "Évol. rythme":     (f"{evol_tot:+.1f} %".replace(".", ",") if evol_tot is not None else "N/D"),
     })
+
     return pd.DataFrame(rows)
 
 
-# ─────────────────────────────────────────────────────────────────
-#  RENDU PRINCIPAL — ONGLET SYNTHÈSE EPCI
-# ─────────────────────────────────────────────────────────────────
 
-def rendu_synthese_epci(communes: pd.DataFrame, coeff_reduction: float = 0.5):
+# ───────────────────────────────────────────────────────────────
+#  RENDU PRINCIPAL
+# ───────────────────────────────────────────────────────────────
+
+def rendu_synthese_epci(communes: pd.DataFrame, struct: dict):
     """
-    Point d'entrée appelé depuis app.py en mode EPCI (vue agrégée).
-    communes        : DataFrame des communes membres
-    coeff_reduction : coefficient ZAN sélectionné par l'utilisateur
+    Vue Synthèse EPCI — agrégation dynamique alignée sur agreger_epci().
     """
     if communes.empty:
-        st.warning("Aucune donnée disponible pour cette CC.")
+        st.warning("Aucune donnée disponible pour cette intercommunalité.")
         return
 
-    ligne0   = communes.iloc[0]
-    nom_epci = str(ligne0.get("epci24txt", "Intercommunalité"))
+    agg = agreger_epci(communes, struct)
+    flux = agg["flux"]
 
-    # ── Agrégation ───────────────────────────────────────────────
-    agg  = agreger_epci(communes)
-    flux = agreger_flux_annuels(communes)
+    # Totaux globaux (m2)
+    conso_tot_m2 = agg["totaux"]["total"]
+    conso_ref_m2 = agg["totaux"]["ref"]
+    conso_zan_m2 = agg["totaux"]["zan"]
 
-    pct_red     = coeff_reduction * 100
-    facteur     = round(1.0 - coeff_reduction, 3)
-    enveloppe   = agg["conso_ref_ha"] * (1.0 - coeff_reduction)
-    restant     = enveloppe - agg["conso_zan_ha"]
-    pct_env     = agg["conso_zan_ha"] / enveloppe * 100 if enveloppe > 0 else None
+    # Totaux par catégorie (m2)
+    totaux_cat, totaux_ref_cat, totaux_zan_cat = _compute_totaux_par_categorie(flux)
+
+    ligne0 = communes.iloc[0]
+    nom_epci = ligne0.get("epci24txt", "Intercommunalité")
 
     st.markdown(f"## 📐 Synthèse — {nom_epci}")
     st.divider()
 
-    # ── Métriques principales ────────────────────────────────────
-    st.markdown("### 📦 Consommation agrégée")
+    # ── Métriques principales ─────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Consommation totale\n2009-2024",  _fha(agg["conso_tot_ha"]))
-    c2.metric("Décennie référence\n2011-2020",   _fha(agg["conso_ref_ha"]))
-    c3.metric("Période ZAN\n2021-2024",          _fha(agg["conso_zan_ha"]))
-    c4.metric("% territoire artificialisé",      _fpct(agg["pct_artificialise"]))
+    c1.metric("Consommation totale 2009-2024", _fmt_ha(conso_tot_m2))
+    c2.metric("Référence 2011-2020",           _fmt_ha(conso_ref_m2))
+    c3.metric("ZAN 2021-2024",                 _fmt_ha(conso_zan_m2))
+    c4.metric("% territoire artificialisé",    _fmt_pct(agg.get("pct_artificialise")))
 
     st.divider()
 
-    # ── ZAN agrégé ───────────────────────────────────────────────
-    st.markdown("### ⚡ Bilan ZAN intercommunal")
-    st.caption(
-        f"Coefficient appliqué : **−{pct_red:.1f} %** (facteur {facteur}) — "
-        f"Enveloppe CC = {_fha(agg['conso_ref_ha'])} × {facteur}"
-    )
-
-    z1, z2, z3, z4 = st.columns(4)
-    z1.metric("Enveloppe ZAN 2021-2031",   _fha(enveloppe))
-    z2.metric("Consommé 2021-2024",        _fha(agg["conso_zan_ha"]))
-    z3.metric("Solde restant 2025-2031",   _fha(restant),
-              delta=f"{restant:+.2f} ha".replace(".", ","),
-              delta_color="normal")
-    z4.metric("% enveloppe utilisée",      _fpct(pct_env))
-
-    # Alerte ZAN
-    if pct_env is not None:
-        if pct_env >= 100:
-            st.error(f"🔴 Enveloppe ZAN dépassée à l'échelle CC ({_fpct(pct_env)}) — action urgente requise.")
-        elif pct_env >= 70:
-            st.warning(f"🟠 Vigilance ZAN — {_fpct(pct_env)} de l'enveloppe utilisée en 4 ans.")
-        else:
-            st.success(f"🟢 Situation ZAN satisfaisante — {_fpct(pct_env)} de l'enveloppe utilisée.")
-
-    st.divider()
-
-    # ── Tableau récapitulatif ─────────────────────────────────────
+    # ── Tableau récapitulatif ────────────────────────────────
     st.markdown("### 🗂️ Détail par catégorie de destination")
     st.caption(
         "Évol. rythme = variation du rythme annuel moyen entre 2011-2020 et 2021-2024. "
         "Valeur négative = bonne trajectoire ✅"
     )
-    df_recap = _tableau_recap(agg)
-    st.dataframe(df_recap, use_container_width=True, hide_index=True,
-                 column_config={
-                     "Évol. rythme": st.column_config.TextColumn(
-                         "Évol. rythme", help="Variation du rythme annuel moyen (2021-2024 vs 2011-2020)"
-                     )
-                 })
+    df_recap = _tableau_recap(
+        totaux_cat,
+        totaux_ref_cat,
+        totaux_zan_cat,
+        conso_tot_m2,
+        conso_ref_m2,
+        conso_zan_m2,
+    )
+    st.dataframe(
+        df_recap,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Évol. rythme": st.column_config.TextColumn(
+                "Évol. rythme",
+                help="Variation du rythme annuel moyen (2021-2024 vs 2011-2020)",
+            )
+        },
+    )
 
     st.divider()
 
-    # ── Graphiques ───────────────────────────────────────────────
+    # ── Graphiques ───────────────────────────────────────────
     st.markdown("### 📈 Visualisations")
 
-    # Ligne 1 : barres + donut
     col_g, col_d = st.columns([2, 1])
     with col_g:
         st.plotly_chart(_graph_barres(flux), use_container_width=True)
     with col_d:
-        st.plotly_chart(_graph_donut(agg), use_container_width=True)
+        st.plotly_chart(_graph_donut(totaux_cat), use_container_width=True)
 
-    # Ligne 2 : comparaison périodes
-    st.plotly_chart(_graph_evolution_periodes(agg), use_container_width=True)
+    st.plotly_chart(_graph_evolution_periodes(totaux_ref_cat, totaux_zan_cat), use_container_width=True)
+    
+
+
