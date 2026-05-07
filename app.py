@@ -15,7 +15,7 @@ import webbrowser
 from ui.utilitaires import get_coords_from_insee
 from ui.sidebar import rendu_sidebar, MODE_COMMUNE, MODE_EPCI, MODE_SCOT
 
-from graphs.grap_export_pdf import *
+from graphs.graph_export_pdf import *
 from graphs.graph_epci_general import rendu_general_epci, agreger_epci
 from graphs.graph_epci_synthese import rendu_synthese_epci
 from graphs.graph_epci_analyse import rendu_analyse_epci
