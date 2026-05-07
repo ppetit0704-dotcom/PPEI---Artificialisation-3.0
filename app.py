@@ -25,7 +25,9 @@ from graphs.graph_scot import (
     rendu_analyse_scot, rendu_ratios_scot,
     rendu_export_pdf_scot,
 )
-from graphs.graph_export_pdf_epci import rendu_export_pdf_epci
+
+from graphs.graph_export_pdf_epci import generer_rapport_epci
+from graphs.graph_export_pdf_scot import generer_rapport_scot
 from core.detecteur import get_col   # ← pour colonnes dynamiques
 
 # =====================================================
@@ -410,12 +412,54 @@ def main():
 
     with tab_export:
         if commune_ok:
-            rendu_export_pdf(code_insee)
+            # --- Sélection de la commune ---
+            code_insee = st.selectbox(
+                "Choisissez une commune",
+                ctx["communes"]["idcom"].unique()
+            )
+
+            # --- Récupération de la ligne complète ---
+            ligne_commune = ctx["communes"][ctx["communes"]["idcom"] == code_insee].iloc[0]
+
+            # --- Coefficient ZAN choisi par l’utilisateur ---
+            coeff_reduction = st.slider(
+                "Coefficient de réduction ZAN",
+                min_value=0.1,
+                max_value=0.9,
+                value=0.5,
+                step=0.01
+            )
+
+            # --- Génération du PDF ---
+            pdf_bytes = generer_rapport_pdf(ligne_commune, coeff_reduction)
+
+            # --- Téléchargement ---
+            st.download_button(
+                "📄 Télécharger le rapport PDF",
+                pdf_bytes,
+                file_name=f"rapport_{code_insee}.pdf",
+                mime="application/pdf"
+            )
         elif valide and niveau == "epci":
-            rendu_export_pdf_epci(ctx["communes"], struct)
+            epci_df = ctx["communes"]      # toutes les communes de l’EPCI
+            pdf_bytes = generer_rapport_epci(epci_df, struct)
+
+            st.download_button(
+                "📄 Télécharger le rapport PDF EPCI",
+                pdf_bytes,
+                file_name="rapport_epci.pdf",
+                mime="application/pdf"
+            )
         elif valide and niveau == "scot":
-            rendu_export_pdf_scot(ctx["communes"], struct)
-        else:
+            scot_df = ctx["communes"]      # toutes les communes du SCoT
+            pdf_bytes = generer_rapport_scot(scot_df, struct)
+
+            st.download_button(
+                "📄 Télécharger le rapport PDF SCoT",
+                pdf_bytes,
+                file_name="rapport_scot.pdf",
+                mime="application/pdf"
+            )
             st.info(MSG_ATTENTE)
 
     with tab_lien:
