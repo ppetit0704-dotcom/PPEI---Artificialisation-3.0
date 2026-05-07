@@ -1,213 +1,369 @@
 """
-@author  : Philippe PETIT
-@version : 2.0.0
-@description : Export PDF intercommunal — version dynamique alignée sur agreger_epci().
+Module d'export PDF — Rapport complet d'artificialisation par EPCI.
+S'appuie sur les utilitaires du module commune (graph_export_pdf.py).
 """
 
+import io
+from datetime import datetime
+
 import pandas as pd
-import plotly.io as pio
-import streamlit as st
-import plotly.graph_objects as go
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import (
+    BaseDocTemplate,
+    Frame,
+    NextPageTemplate,
+    PageBreak,
+    PageTemplate,
+    Paragraph,
+    Spacer,
+)
 
-from graphs.graph_epci_general import agreger_epci
+# Import des utilitaires du module COMMUNE
+from graphs.graph_export_pdf import (
+    W,
+    H,
+    MARGIN,
+    M2_HA,
+    _make_styles,
+    _extraire_flux,
+    _totaux,
+    _ratios,
+    _fig_flux,
+    _fig_donut,
+    _fig_jauge,
+    _fig_projection,
+    _fig_tendance,
+    _metric_table,
+    _data_table,
+    _zan_badge,
+    _img_from_bytes,
+    _HeaderFooterCanvas,
+    _on_cover,
+    _on_page,
+    _fha,
+    _fm2,
+    _fpct,
+    _fval,
+)
 
-
-# ───────────────────────────────────────────────────────────────
-#  CONSTANTES
-# ───────────────────────────────────────────────────────────────
-
-CATEGORIES = [
-    ("habitat",     "Habitat",      "#3B82F6"),
-    ("activite",    "Activité",     "#F59E0B"),
-    ("mixte",       "Mixte",        "#8B5CF6"),
-    ("route",       "Route",        "#6B7280"),
-    ("ferroviaire", "Ferroviaire",  "#EC4899"),
-    ("inconnu",     "Inconnu",      "#D1D5DB"),
-]
-
-M2_HA = 10_000.0
-
-
-# ───────────────────────────────────────────────────────────────
-#  OUTILS DE CALCUL
-# ───────────────────────────────────────────────────────────────
-
-def _compute_totaux_par_categorie(flux: dict):
-    """Retourne (totaux, totaux_ref, totaux_zan) par catégorie."""
-    totaux = {k: 0.0 for k, _, _ in CATEGORIES}
-    totaux_ref = {k: 0.0 for k, _, _ in CATEGORIES}
-    totaux_zan = {k: 0.0 for k, _, _ in CATEGORIES}
-
-    for an, data in flux.items():
-        try:
-            a = int(an)
-        except:
-            continue
-
-        for key, _, _ in CATEGORIES:
-            val = data.get(key, 0.0) or 0.0
-            totaux[key] += val
-            if 2011 <= a <= 2020:
-                totaux_ref[key] += val
-            if 2021 <= a <= 2024:
-                totaux_zan[key] += val
-
-    return totaux, totaux_ref, totaux_zan
+# Fonction d’agrégation EPCI
+from .graph_epci_general import agreger_epci
 
 
-def _fmt_ha(m2):
-    return f"{m2 / M2_HA:.2f} ha".replace(".", ",")
+# ─────────────────────────────────────────────────────────────
+#  CORRECTION MAJEURE : AGRÉGATION DES FLUX EPCI
+# ─────────────────────────────────────────────────────────────
+
+def _extraire_flux_epci(epci_df: pd.DataFrame) -> dict:
+    """
+    Agrège les flux de toutes les communes de l’EPCI.
+    Retourne un dict flux[année][categorie] = m²
+    """
+    cats = {
+        "act": "activite",
+        "hab": "habitat",
+        "mix": "mixte",
+        "rou": "route",
+        "fer": "ferroviaire",
+        "inc": "inconnu",
+    }
+
+    flux = {}
+
+    for debut in range(9, 24):  # 2009 → 2023
+        an_fin = debut + 1
+        annee = 2000 + an_fin
+
+        flux[annee] = {label: 0 for label in cats.values()}
+        flux[annee]["total"] = 0
+
+        for _, row in epci_df.iterrows():
+            for code, label in cats.items():
+                col = f"art{debut:02d}{code}{an_fin:02d}"
+                raw = row.get(col, 0)
+                try:
+                    val = float(raw)
+                except (TypeError, ValueError):
+                    val = 0.0
+                flux[annee][label] += val
+                flux[annee]["total"] += val
+
+    return flux
 
 
-def _fmt_pct(x):
-    if x is None:
-        return "N/D"
-    return f"{x:.1f} %".replace(".", ",")
+# ─────────────────────────────────────────────────────────────
+#  PAGES EPCI
+# ─────────────────────────────────────────────────────────────
 
+def page_couverture_epci(ligne_epci: pd.Series, styles):
+    story = []
+    story.append(NextPageTemplate("Body"))
+    story.append(Spacer(1, H * 0.44))
 
-# ───────────────────────────────────────────────────────────────
-#  GRAPHIQUES (réutilisés dans le PDF)
-# ───────────────────────────────────────────────────────────────
+    epci_code = str(ligne_epci.get("epci24", ""))
+    epci_nom  = str(ligne_epci.get("epci24txt", "EPCI inconnu"))
 
-def _graph_barres(flux: dict) -> go.Figure:
-    annees = sorted(flux.keys())
-    fig = go.Figure()
+    story.append(Paragraph("Observatoire de l'artificialisation", styles["CoverSub"]))
+    story.append(Spacer(1, 0.3 * MARGIN))
 
-    for key, label, col in CATEGORIES:
-        vals = [(flux[a].get(key, 0.0) / M2_HA) for a in annees]
-        fig.add_trace(go.Bar(
-            name=label,
-            x=annees,
-            y=vals,
-            marker_color=col,
-        ))
+    story.append(Paragraph(f"{epci_code} · {epci_nom}", styles["CoverTitle"]))
+    story.append(Spacer(1, 0.4 * MARGIN))
 
-    fig.update_layout(
-        barmode="stack",
-        title="Consommation annuelle agrégée (ha/an)",
-        height=380,
-        margin=dict(l=40, r=20, t=60, b=40),
-        plot_bgcolor="rgba(0,0,0,0)",
-    )
-    return fig
-
-
-def _graph_donut(totaux_cat: dict) -> go.Figure:
-    labels = [label for _, label, _ in CATEGORIES]
-    values = [totaux_cat[k] / M2_HA for k, _, _ in CATEGORIES]
-    colors = [col for _, _, col in CATEGORIES]
-
-    fig = go.Figure(go.Pie(
-        labels=labels,
-        values=values,
-        hole=0.52,
-        marker=dict(colors=colors),
-        textinfo="label+percent",
+    story.append(Paragraph(
+        "Rapport d'artificialisation à l'échelle de l'EPCI",
+        styles["CoverSub"]
     ))
-    fig.update_layout(
-        title="Répartition totale par catégorie (2009–2024)",
-        height=360,
-        margin=dict(l=20, r=20, t=60, b=20),
-        showlegend=False,
-    )
-    return fig
+    story.append(Spacer(1, 0.8 * MARGIN))
+
+    story.append(Paragraph(
+        f"Rapport généré le {datetime.now().strftime('%d/%m/%Y')}  |  Données CEREMA 2009–2024",
+        styles["CoverInfo"]
+    ))
+
+    story.append(PageBreak())
+    return story
 
 
-# ───────────────────────────────────────────────────────────────
-#  RENDU PRINCIPAL — EXPORT PDF
-# ───────────────────────────────────────────────────────────────
+def page_identite_epci(epci_df: pd.DataFrame, styles):
+    story = []
+    story.append(Paragraph("1 · Identité de l’EPCI", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
 
-def rendu_export_pdf_epci(communes: pd.DataFrame, struct: dict):
-    """
-    Export PDF EPCI — version premium.
-    Produit un rendu HTML propre, stylé, imprimable en PDF via le navigateur.
-    """
-    if communes.empty:
-        st.warning("Aucune donnée disponible pour cette intercommunalité.")
-        return
+    epci_code = str(epci_df["epci24"].iloc[0])
+    epci_nom  = str(epci_df["epci24txt"].iloc[0])
 
-    agg = agreger_epci(communes, struct)
-    flux = agg["flux"]
+    communes = sorted(epci_df["idcomtxt"].dropna().unique())
+    deps      = sorted(epci_df["iddeptxt"].dropna().unique())
+    regions   = sorted(epci_df["idregtxt"].dropna().unique())
 
-    # Totaux par catégorie
-    totaux_cat, totaux_ref_cat, totaux_zan_cat = _compute_totaux_par_categorie(flux)
+    headers = ["Élément", "Valeur"]
+    rows = [
+        ["EPCI", f"{epci_code} - {epci_nom}"],
+        ["Communes", ", ".join(communes)],
+        ["Départements", ", ".join(deps)],
+        ["Régions", ", ".join(regions)],
+        ["Nombre de communes", len(communes)],
+    ]
 
-    ligne0 = communes.iloc[0]
-    nom_epci = ligne0.get("epci24txt", "Intercommunalité")
+    story.append(_data_table(headers, rows, styles))
+    story.append(Spacer(1, 0.5 * MARGIN))
 
-    st.markdown(f"## 📄 Export PDF — {nom_epci}")
-    st.caption("Le document ci-dessous est optimisé pour une impression PDF (Ctrl+P → Enregistrer en PDF).")
-    st.divider()
+    story.append(Paragraph(
+        "Cet EPCI regroupe plusieurs communes pouvant appartenir à différents "
+        "départements et régions. Les informations ci‑dessus décrivent son périmètre administratif.",
+        styles["Body"]
+    ))
 
-    # ───────────────────────────────────────────────────────────
-    #  PAGE DE GARDE
-    # ───────────────────────────────────────────────────────────
+    story.append(PageBreak())
+    return story
 
-    st.markdown(f"""
-    <div style="padding:40px; border:2px solid #ccc; border-radius:12px; margin-bottom:40px;">
-        <h1 style="text-align:center; margin-bottom:0;">Synthèse intercommunale</h1>
-        <h2 style="text-align:center; margin-top:5px; color:#555;">{nom_epci}</h2>
-        <p style="text-align:center; margin-top:30px; font-size:18px;">
-            Tableau de bord de l'artificialisation — Export PDF<br>
-            Version 3.0 — Données agrégées automatiquement
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
 
-    # ───────────────────────────────────────────────────────────
-    #  MÉTRIQUES PRINCIPALES
-    # ───────────────────────────────────────────────────────────
+def page_synthese_epci(r, totaux, styles):
+    story = []
+    story.append(Paragraph("2 · Synthèse générale", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
 
-    st.markdown("### 📦 Indicateurs principaux")
+    items = [
+        ("Conso totale 2009–2024", _fha(r["conso_tot_ha"]), "ha"),
+        ("Référence 2011–2020", _fha(r["conso_2011_20_ha"]), "ha"),
+        ("ZAN 2021–2024", _fha(r["conso_2021_24_ha"]), "ha"),
+        ("% enveloppe utilisée", _fpct(r["pct_enveloppe_utilisee"]), "%"),
+    ]
+    story.append(_metric_table(items, styles))
+    story.append(Spacer(1, 0.4 * MARGIN))
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Consommation totale 2009–2024", _fmt_ha(agg["totaux"]["total"]))
-    c2.metric("Référence 2011–2020",           _fmt_ha(agg["totaux"]["ref"]))
-    c3.metric("ZAN 2021–2024",                 _fmt_ha(agg["totaux"]["zan"]))
-    c4.metric("% territoire artificialisé",    _fmt_pct(agg.get("pct_artificialise")))
+    story.append(_zan_badge(r["pct_enveloppe_utilisee"], styles))
+    story.append(PageBreak())
+    return story
 
-    st.divider()
 
-    # ───────────────────────────────────────────────────────────
-    #  TABLEAU PAR CATÉGORIE
-    # ───────────────────────────────────────────────────────────
+def page_flux_epci(flux, png_flux, styles):
+    story = []
+    story.append(Paragraph("3 · Flux annuels (EPCI)", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
 
-    st.markdown("### 🗂️ Détail par catégorie")
+    story.append(_img_from_bytes(png_flux, 17, 7))
+    story.append(Spacer(1, 0.4 * MARGIN))
 
+    headers = ["Année", "Habitat", "Activité", "Mixte", "Route", "Ferroviaire", "Inconnu", "Total"]
     rows = []
-    for key, label, _ in CATEGORIES:
-        rows.append({
-            "Catégorie": label,
-            "Total 2009–2024": _fmt_ha(totaux_cat[key]),
-            "2011–2020 (réf.)": _fmt_ha(totaux_ref_cat[key]),
-            "2021–2024 (ZAN)": _fmt_ha(totaux_zan_cat[key]),
-        })
+    for an in sorted(flux.keys()):
+        f = flux[an]
+        rows.append([
+            an,
+            _fha(f["habitat"] / M2_HA),
+            _fha(f["activite"] / M2_HA),
+            _fha(f["mixte"] / M2_HA),
+            _fha(f["route"] / M2_HA),
+            _fha(f["ferroviaire"] / M2_HA),
+            _fha(f["inconnu"] / M2_HA),
+            _fha(f["total"] / M2_HA),
+        ])
 
-    df = pd.DataFrame(rows)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    story.append(_data_table(headers, rows, styles))
+    story.append(PageBreak())
+    return story
 
-    st.divider()
 
-    # ───────────────────────────────────────────────────────────
-    #  GRAPHIQUES
-    # ───────────────────────────────────────────────────────────
+def page_categories_epci(totaux, png_donut, styles):
+    story = []
+    story.append(Paragraph("4 · Répartition par catégories", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
 
-    st.markdown("### 📈 Graphiques")
+    story.append(_img_from_bytes(png_donut, 9, 7))
+    story.append(Spacer(1, 0.4 * MARGIN))
 
-    col_g, col_d = st.columns([2, 1])
-    with col_g:
-        st.plotly_chart(_graph_barres(flux), use_container_width=True)
-    with col_d:
-        st.plotly_chart(_graph_donut(totaux_cat), use_container_width=True)
+    headers = ["Catégorie", "Surface (ha)", "Part (%)"]
+    rows = []
+    total = totaux["2009-2024"]["total"] / M2_HA if totaux["2009-2024"]["total"] else 0
 
-    st.divider()
+    for cat in ["habitat", "activite", "mixte", "route", "ferroviaire", "inconnu"]:
+        val = totaux["2009-2024"][cat] / M2_HA
+        pct = val / total * 100 if total > 0 else 0
+        rows.append([cat.capitalize(), _fha(val), _fpct(pct)])
 
-    # ───────────────────────────────────────────────────────────
-    #  FIN DU DOCUMENT
-    # ───────────────────────────────────────────────────────────
+    story.append(_data_table(headers, rows, styles))
+    story.append(PageBreak())
+    return story
 
-    st.markdown("""
-    <div style="text-align:center; margin-top:60px; color:#777;">
-        <p>Document généré automatiquement — Tableau de bord artificialisation V3.0</p>
-    </div>
-    """, unsafe_allow_html=True)
+
+def page_ratios_epci(r, styles):
+    story = []
+    story.append(Paragraph("5 · Ratios A3‑C (EPCI)", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
+
+    headers = ["Ratio", "Valeur"]
+    rows = [
+        ["m² / hab (total)", _fm2(r["m2_hab_total"])],
+        ["m² / hab (réf.)", _fm2(r["m2_hab_ref"])],
+        ["m² / hab (ZAN)", _fm2(r["m2_hab_zan"])],
+        ["ha / hab", _fha(r["ha_hab_par_menage"])],
+        ["m² activité / emploi", _fm2(r["m2_act_par_emploi"])],
+        ["Densité résidentielle", _fval(r["densite_resid"], "ménages/ha")],
+        ["Ratio habitat / activité", _fval(r["ratio_hab_act"])],
+    ]
+
+    story.append(_data_table(headers, rows, styles))
+    story.append(PageBreak())
+    return story
+
+
+def page_analyse_tendance_epci(r, totaux, png_tendance, styles):
+    story = []
+    story.append(Paragraph("6 · Analyse & tendance ZAN (EPCI)", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
+
+    ref_ha = r["conso_2011_20_ha"]
+    objectif_ha = ref_ha * (1 - r["coeff_reduction"])
+    deja_ha = r["consomme_zan_ha"]
+    reste_ha = max(objectif_ha - deja_ha, 0)
+
+    items = [
+        ("Référence 2011–2020", _fha(ref_ha), "ha"),
+        (f"Objectif 2021–2030 ({int(r['coeff_reduction']*100)} %)", _fha(objectif_ha), "ha"),
+        ("Déjà consommé 2021–2024", _fha(deja_ha), "ha"),
+        ("Reste disponible 2024–2030", _fha(reste_ha), "ha"),
+    ]
+    story.append(_metric_table(items, styles))
+    story.append(Spacer(1, 0.5 * MARGIN))
+
+    story.append(_img_from_bytes(png_tendance, 17, 7))
+    story.append(Spacer(1, 0.5 * MARGIN))
+
+    rythme_obs = deja_ha / 4 if deja_ha else 0
+    rythme_cible = objectif_ha / 10
+
+    analyse = []
+    analyse.append(f"• Rythme observé : <b>{_fha(rythme_obs)}</b> / an.")
+    analyse.append(f"• Rythme cible : <b>{_fha(rythme_cible)}</b> / an.")
+
+    if rythme_obs > rythme_cible:
+        analyse.append("• ⚠️ Au rythme actuel, l’objectif serait dépassé avant 2030.")
+    else:
+        analyse.append("• 🟢 Le rythme actuel est compatible avec l’objectif ZAN.")
+
+    story.append(Paragraph("<br/>".join(analyse), styles["Body"]))
+    story.append(PageBreak())
+    return story
+
+
+def page_annexes_epci(flux, totaux, r, styles):
+    story = []
+    story.append(Paragraph("7 · Annexes (EPCI)", styles["SectionTitle"]))
+    story.append(Spacer(1, 0.25 * MARGIN))
+
+    headers = ["Période", "Total (ha)"]
+    rows = [
+        ["2009–2024", _fha(totaux["2009-2024"]["total"] / M2_HA)],
+        ["2011–2020", _fha(totaux["2011-2020"]["total"] / M2_HA)],
+        ["2021–2024", _fha(totaux["2021-2024"]["total"] / M2_HA)],
+    ]
+    story.append(_data_table(headers, rows, styles))
+    story.append(PageBreak())
+    return story
+
+
+# ─────────────────────────────────────────────────────────────
+#  GÉNÉRATION DU PDF EPCI
+# ─────────────────────────────────────────────────────────────
+
+def generer_rapport_epci(epci_df: pd.DataFrame, struct, coeff_reduction: float = 0.5) -> bytes:
+
+    # Agrégation EPCI
+    ligne_epci = agreger_epci(epci_df, struct)
+
+    # CORRECTION : flux agrégés depuis epci_df
+    flux   = _extraire_flux_epci(epci_df)
+
+    totaux = _totaux(flux)
+    r      = _ratios(ligne_epci, flux, totaux, coeff_reduction)
+
+    styles = _make_styles()
+
+    png_flux     = _fig_flux(flux)
+    png_donut    = _fig_donut(totaux)
+    png_jauge    = _fig_jauge(r)
+    png_proj     = _fig_projection(r)
+    png_tendance = _fig_tendance(flux, r)
+
+    epci_code = str(epci_df["epci24"].iloc[0])
+    epci_nom  = str(epci_df["epci24txt"].iloc[0])
+
+    buf = io.BytesIO()
+    doc = BaseDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=MARGIN, rightMargin=MARGIN,
+        topMargin=2.0 * MARGIN, bottomMargin=1.8 * MARGIN,
+        title=f"Rapport EPCI — {epci_nom}",
+        author="Observatoire artificialisation",
+        subject="Analyse ZAN EPCI",
+        creator="Philippe PETIT",
+    )
+
+    frame_cover = Frame(0, 0, W, H)
+    frame_body  = Frame(MARGIN, 1.8 * MARGIN, W - 2*MARGIN, H - 3.6*MARGIN)
+
+    hfc = _HeaderFooterCanvas(
+        nom_commune=epci_nom,
+        code_insee=epci_code,
+        date_str=datetime.now().strftime("%d/%m/%Y"),
+    )
+
+    doc.addPageTemplates([
+        PageTemplate(id="Cover", frames=[frame_cover], onPage=_on_cover),
+        PageTemplate(id="Body",  frames=[frame_body], onPage=lambda c,d: _on_page(c,d,hfc)),
+    ])
+
+    story = []
+    story += page_couverture_epci(ligne_epci, styles)
+    story += page_identite_epci(epci_df, styles)
+    story += page_synthese_epci(r, totaux, styles)
+    story += page_flux_epci(flux, png_flux, styles)
+    story += page_categories_epci(totaux, png_donut, styles)
+    story += page_ratios_epci(r, styles)
+    story += page_analyse_tendance_epci(r, totaux, png_tendance, styles)
+    story += page_annexes_epci(flux, totaux, r, styles)
+
+    doc.build(story)
+    return buf.getvalue()
