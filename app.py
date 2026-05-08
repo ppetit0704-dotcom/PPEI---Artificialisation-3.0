@@ -15,7 +15,7 @@ import webbrowser
 from ui.utilitaires import get_coords_from_insee
 from ui.sidebar import rendu_sidebar, MODE_COMMUNE, MODE_EPCI, MODE_SCOT
 
-from graphs.graph_export_pdf import *
+
 from graphs.graph_epci_general import rendu_general_epci, agreger_epci
 from graphs.graph_epci_synthese import rendu_synthese_epci
 from graphs.graph_epci_analyse import rendu_analyse_epci
@@ -26,6 +26,7 @@ from graphs.graph_scot import (
     rendu_export_pdf_scot,
 )
 
+from graphs.graph_export_pdf import *
 from graphs.graph_export_pdf_epci import generer_rapport_epci
 from graphs.graph_export_pdf_scot import generer_rapport_scot
 from core.detecteur import get_col   # ← pour colonnes dynamiques
@@ -431,35 +432,43 @@ def main():
             )
 
             # --- Génération du PDF ---
-            pdf_bytes = generer_rapport_pdf(ligne_commune, coeff_reduction)
+            if st.button("📄 Générer le rapport PDF"):
+                with st.spinner("Veuillez patienter... Traitement du rapport en cours..."):
+                    pdf_bytes = generer_rapport_pdf(ligne_commune, coeff_reduction)
+                st.success("Rapport généré avec succès ! Vous pouvez maintenant le télécharger.")
 
-            # --- Téléchargement ---
-            st.download_button(
-                "📄 Télécharger le rapport PDF",
-                pdf_bytes,
-                file_name=f"rapport_{code_insee}.pdf",
-                mime="application/pdf"
-            )
+                st.download_button(
+                    "📥 Télécharger le rapport PDF",
+                    pdf_bytes,
+                    file_name=f"rapport_{code_insee}.pdf",
+                    mime="application/pdf"
+                )
         elif valide and niveau == "epci":
             epci_df = ctx["communes"]      # toutes les communes de l’EPCI
-            pdf_bytes = generer_rapport_epci(epci_df, struct)
+            if st.button("📄 Générer le rapport PDF"):
+                with st.spinner("Veuillez patienter... Traitement du rapport en cours..."):
+                    pdf_bytes = generer_rapport_epci(epci_df, struct)
+                st.success("Rapport généré avec succès ! Vous pouvez maintenant le télécharger.")
 
-            st.download_button(
-                "📄 Télécharger le rapport PDF EPCI",
-                pdf_bytes,
-                file_name="rapport_epci.pdf",
-                mime="application/pdf"
-            )
+                st.download_button(
+                    "📄 Télécharger le rapport PDF EPCI",
+                    pdf_bytes,
+                    file_name="rapport_epci.pdf",
+                    mime="application/pdf"
+                )
         elif valide and niveau == "scot":
             scot_df = ctx["communes"]      # toutes les communes du SCoT
-            pdf_bytes = generer_rapport_scot(scot_df, struct)
+            if st.button("📄 Générer le rapport PDF"):
+                with st.spinner("Veuillez patienter... Traitement du rapport en cours..."):
+                    pdf_bytes = generer_rapport_scot(scot_df, struct)
+                st.success("Rapport généré avec succès ! Vous pouvez maintenant le télécharger.")
 
-            st.download_button(
-                "📄 Télécharger le rapport PDF SCoT",
-                pdf_bytes,
-                file_name="rapport_scot.pdf",
-                mime="application/pdf"
-            )
+                st.download_button(
+                    "📄 Télécharger le rapport PDF SCoT",
+                    pdf_bytes,
+                    file_name="rapport_scot.pdf",
+                    mime="application/pdf"
+                )
             st.info(MSG_ATTENTE)
 
     with tab_lien:

@@ -120,7 +120,7 @@ body {
     <h1>PPEI – Tableau de bord Artificialisation</h1>
     <h2>Notice d'utilisation officielle</h2>
     <div class="meta">
-        Auteur : Philippe PETIT • Version 3.0 • Document PDF généré automatiquement
+        Auteur : Philippe PETIT • Version 3.0
     </div>
 </div>
 
@@ -150,10 +150,10 @@ body {
 
     <div class="alert">
         <strong>Avant toute utilisation :</strong><br><br>
-        1. Télécharger les données officielles depuis l'Observatoire de l'artificialisation des sols.<br>
-        2. Enregistrer le fichier CSV sur votre ordinateur.<br>
+        1. <a href="https://artificialisation.developpement-durable.gouv.fr/mesurer-la-consommation-despaces/telecharger-les-donnees">Télécharger les données officielles depuis l'Observatoire de l'artificialisation des sols.</a><br>
+        2. Enregistrer le fichier CSV sur un ordinateur local.<br>
         3. Charger ce fichier dans l'application via la barre latérale.<br><br>
-        ⚠️ L'application ne contient aucune donnée intégrée : elle fonctionne uniquement avec les données que vous fournissez.
+        ⚠️ L'application ne contient aucune donnée intégrée : elle fonctionne uniquement avec les données fournies par l'utilisateur.
     </div>
 </div>
 
@@ -181,7 +181,7 @@ body {
         <h2>⚙️ Analyse automatique du fichier CEREMA</h2>
     </div>
 
-    <p>
+    <p style="color:red;">
         Les fichiers fournis par le <strong>CEREMA</strong> évoluent chaque année : nouveaux millésimes, colonnes renommées,
         catégories modifiées…  
         Pour garantir une compatibilité totale, l’application analyse automatiquement la structure du fichier CSV
@@ -231,13 +231,11 @@ body {
         </ul>
     </div>
 
-    <div class="nota">
+    <div class="nota" style="color:red;">
         <strong>📌 Note :</strong>  
         La grammaire couvre les années 2009 → 2099 et s’adapte automatiquement aux nouveaux flux publiés chaque année.
     </div>
 </div>
-
-<!-- FIN PARTIE 1 -->
 
 <!-- SECTION 4 — PRISE EN MAIN -->
 <div class="section" id="prise-en-main">
@@ -246,7 +244,7 @@ body {
         <h2>🚀 Prise en main</h2>
     </div>
 
-    <div class="step"><strong>Étape 1 —</strong> Ouvrir l'application dans votre navigateur</div>
+    <div class="step"><strong>Étape 1 —</strong> Ouvrir l'application dans un navigateur récent (Chrome, Edge, Firefox…)</div>
     <div class="step"><strong>Étape 2 —</strong> Charger le fichier CSV via la barre latérale</div>
 
     <div class="step"><strong>Étape 3 —</strong> Choisir le niveau territorial :</div>
@@ -257,10 +255,10 @@ body {
     </div>
 
     <div class="step" style="margin-top:12px;"><strong>Étape 4 —</strong> Naviguer dans les onglets d'analyse</div>
-    <div class="step"><strong>Étape 5 —</strong> Choisir le coefficient ZAN dans l'onglet Analyse & Tendances</div>
+    <div class="step"><strong>Étape 5 —</strong> Choisir le coefficient ZAN dans l'onglet <em>Analyse &amp; Tendances</em></div>
 </div>
 
-<!-- SECTION 5 — LECTURE DES ONGLES -->
+<!-- SECTION 5 — LECTURE DES ONGLETS -->
 <div class="section" id="onglets">
     <div class="section-title">
         <div class="section-num">5</div>
@@ -277,7 +275,7 @@ body {
         Vue d'ensemble des indicateurs principaux : surfaces artificialisées par catégorie, évolution temporelle, bilan ZAN.
     </div>
 
-    <h3 style="margin-top:18px;">📈 Analyse & Tendances</h3>
+    <h3 style="margin-top:18px;">📈 Analyse &amp; Tendances</h3>
     <div class="card">
         Courbes historiques (2011-2020), valeurs observées (2021-2024) et projection (2025-2030) selon le coefficient ZAN.
     </div>
@@ -311,52 +309,52 @@ body {
     </div>
 
     <!-- Famille 1 -->
-    <h3 style="margin:20px 0 12px; color:#1f4e79;">🏗️ Famille 1 — Foncier & Population</h3>
+    <h3 style="margin:20px 0 12px; color:#1f4e79;">🏗️ Famille 1 — Foncier &amp; Population</h3>
 
-    <div class="ratio-card">
-        <div class="ratio-name">m² consommés par habitant (total)</div>
-        <div class="ratio-formula">Consommation totale (m²) ÷ Population 2021</div>
-        <p class="ratio-desc">Mesure la part de territoire artificialisé par habitant.</p>
+    <div class="card">
+        <strong>m² consommés par habitant (total)</strong><br>
+        <em>Consommation totale (m²) ÷ Population 2021</em><br>
+        Mesure la part de territoire artificialisé par habitant.
     </div>
 
-    <div class="ratio-card">
-        <div class="ratio-name">Rythme annuel moyen (m²/habitant/an)</div>
-        <div class="ratio-formula">Consommation période ÷ Durée ÷ Population moyenne</div>
-        <p class="ratio-desc">Compare le rythme entre la décennie de référence et la période ZAN.</p>
+    <div class="card" style="margin-top:10px;">
+        <strong>Rythme annuel moyen (m²/habitant/an)</strong><br>
+        <em>Consommation période ÷ Durée ÷ Population moyenne</em><br>
+        Compare le rythme entre la décennie de référence et la période ZAN.
     </div>
 
     <!-- Famille 2 -->
-    <h3 style="margin:20px 0 12px; color:#1B6B3A;">🏠 Famille 2 — Habitat & Ménages</h3>
+    <h3 style="margin:20px 0 12px; color:#1B6B3A;">🏠 Famille 2 — Habitat &amp; Ménages</h3>
 
-    <div class="ratio-card vert">
-        <div class="ratio-name">m² d'habitat consommés par nouveau ménage</div>
-        <div class="ratio-formula">Surface habitat 2011-2020 ÷ Nouveaux ménages 2015-2021</div>
+    <div class="card">
+        <strong>m² d'habitat consommés par nouveau ménage</strong><br>
+        <em>Surface habitat 2011-2020 ÷ Nouveaux ménages 2015-2021</em>
     </div>
 
-    <div class="ratio-card vert">
-        <div class="ratio-name">Densité résidentielle implicite</div>
-        <div class="ratio-formula">Nouveaux ménages ÷ Hectares habitat artificialisés</div>
+    <div class="card" style="margin-top:10px;">
+        <strong>Densité résidentielle implicite</strong><br>
+        <em>Nouveaux ménages ÷ Hectares habitat artificialisés</em>
     </div>
 
     <!-- Famille 3 -->
-    <h3 style="margin:20px 0 12px; color:#C45C00;">🏭 Famille 3 — Activité économique & Emploi</h3>
+    <h3 style="margin:20px 0 12px; color:#C45C00;">🏭 Famille 3 — Activité économique &amp; Emploi</h3>
 
-    <div class="ratio-card orange">
-        <div class="ratio-name">m² d'activité consommés par emploi créé</div>
-        <div class="ratio-formula">Surface activité totale ÷ Variation emplois</div>
+    <div class="card">
+        <strong>m² d'activité consommés par emploi créé</strong><br>
+        <em>Surface activité totale ÷ Variation emplois</em>
     </div>
 
-    <div class="ratio-card orange">
-        <div class="ratio-name">Ratio habitat / activité</div>
-        <div class="ratio-formula">Surface habitat ÷ Surface activité</div>
+    <div class="card" style="margin-top:10px;">
+        <strong>Ratio habitat / activité</strong><br>
+        <em>Surface habitat ÷ Surface activité</em>
     </div>
 
     <!-- Famille 4 -->
-    <h3 style="margin:20px 0 12px; color:#4A5568;">📏 Famille 4 — Surface & Pression territoriale</h3>
+    <h3 style="margin:20px 0 12px; color:#4A5568;">📏 Famille 4 — Surface &amp; Pression territoriale</h3>
 
-    <div class="ratio-card gris">
-        <div class="ratio-name">% du territoire communal artificialisé</div>
-        <div class="ratio-formula">Consommation totale ÷ Surface commune × 100</div>
+    <div class="card">
+        <strong>% du territoire communal artificialisé</strong><br>
+        <em>Consommation totale ÷ Surface commune × 100</em>
     </div>
 </div>
 
@@ -367,29 +365,29 @@ body {
         <h2>⚡ Indicateurs ZAN — Zéro Artificialisation Nette</h2>
     </div>
 
-    <div class="zan-box">
+    <div class="card">
         <h3>⚖️ Le cadre réglementaire</h3>
         <p>
             La loi Climat et Résilience fixe un objectif national de réduction de la consommation foncière.
         </p>
-        <div class="zan-formula-big">
+        <div style="margin:15px 0; padding:12px 16px; background:#f8fafc; border-left:3px solid #1f4e79; font-weight:600;">
             Enveloppe 2021-2031 = Consommation 2011-2020 × (1 − coefficient de réduction)
         </div>
     </div>
 
-    <div class="ratio-card">
-        <div class="ratio-name">Enveloppe ZAN 2021-2031</div>
-        <div class="ratio-formula">Conso 2011-2020 × (1 − coefficient)</div>
+    <div class="card" style="margin-top:16px;">
+        <strong>Enveloppe ZAN 2021-2031</strong><br>
+        <em>Consommation 2011-2020 × (1 − coefficient)</em>
     </div>
 
-    <div class="ratio-card">
-        <div class="ratio-name">% de l'enveloppe ZAN utilisée</div>
-        <div class="ratio-formula">Conso 2021-2024 ÷ Enveloppe × 100</div>
+    <div class="card" style="margin-top:10px;">
+        <strong>% de l'enveloppe ZAN utilisée</strong><br>
+        <em>Consommation 2021-2024 ÷ Enveloppe × 100</em>
     </div>
 
-    <div class="ratio-card">
-        <div class="ratio-name">Capacité annuelle résiduelle</div>
-        <div class="ratio-formula">Solde restant ÷ années restantes</div>
+    <div class="card" style="margin-top:10px;">
+        <strong>Capacité annuelle résiduelle</strong><br>
+        <em>Solde restant ÷ années restantes</em>
     </div>
 </div>
 
@@ -397,7 +395,77 @@ body {
 <div class="section" id="bonnes-pratiques">
     <div class="section-title">
         <div class="section-num">8</div>
+        <h2>✅ Bonnes pratiques d'utilisation</h2>
+    </div>
 
+    <div class="alert" style="background:#E8FFF3; border-color:#1B6B3A;">
+        <strong>Pour une analyse fiable et reproductible :</strong>
+        <ul style="margin-top:6px; line-height:1.7;">
+            <li>Utiliser systématiquement le fichier CSV officiel le plus récent fourni par le CEREMA.</li>
+            <li>Conserver une copie du fichier source utilisé pour chaque analyse (traçabilité).</li>
+            <li>Vérifier que le territoire sélectionné correspond bien au périmètre étudié (commune, EPCI, SCoT).</li>
+            <li>Privilégier les ratios plutôt que les valeurs brutes pour comparer des territoires.</li>
+            <li>Confronter les résultats aux documents de planification (PLU, SCoT, SRADDET).</li>
+            <li>Exporter régulièrement les rapports PDF pour archivage et partage avec les élus.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <strong>Conseil méthodologique :</strong><br>
+        Utiliser les indicateurs comme support de discussion et d’objectivation, et non comme une vérité unique.
+    </div>
+</div>
+
+<!-- SECTION 9 — LIMITES -->
+<div class="section" id="limites">
+    <div class="section-title">
+        <div class="section-num">9</div>
+        <h2>⚠️ Limites de l'outil et des données</h2>
+    </div>
+
+    <div class="alert">
+        <strong>Points de vigilance :</strong>
+        <ul style="margin-top:6px; line-height:1.7;">
+            <li>Les données CEREMA peuvent comporter des imprécisions, des corrections ou des ruptures de séries entre millésimes.</li>
+            <li>Certaines catégories (NAF, types de flux, nomenclatures) peuvent évoluer d’une année à l’autre.</li>
+            <li>Les projections ZAN sont indicatives et ne constituent pas une prévision réglementaire opposable.</li>
+            <li>Les résultats dépendent entièrement du fichier fourni : un fichier incomplet ou modifié fausse les analyses.</li>
+            <li>Les données démographiques (INSEE) ne sont pas recalculées automatiquement à chaque nouvelle année.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <strong>Interprétation :</strong><br>
+        Les indicateurs doivent être lus en contexte, en lien avec la connaissance de terrain et les documents de planification.
+    </div>
+</div>
+
+<!-- SECTION 10 — ASSISTANCE -->
+<div class="section" id="assistance">
+    <div class="section-title">
+        <div class="section-num">10</div>
+        <h2>🆘 Assistance et contacts</h2>
+    </div>
+
+    <div class="card">
+        <strong>En cas de difficulté :</strong>
+        <ul style="margin-top:6px; line-height:1.7;">
+            <li>Consulter la documentation officielle de l’Observatoire de l’artificialisation des sols et du CEREMA.</li>
+            <li>Relire les messages d’erreur affichés dans l’application (fichier incompatible, colonnes non reconnues, etc.).</li>
+            <li>Vérifier que le fichier CSV n’a pas été modifié (séparateur, encodage, colonnes supprimées).</li>
+        </ul>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+        <strong>Contact technique :</strong><br>
+        Auteur du tableau de bord : <strong>Philippe PETIT</strong>.<br>
+        Modalités de contact : selon les canaux habituels de diffusion de l’outil (collectivités, réseau professionnel, dépôt GitHub le cas échéant).
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+        <strong>Évolutions et retours d’usage :</strong><br>
+        Les retours d’expérience (bugs, demandes d’amélioration, besoins spécifiques) peuvent être remontés pour faire évoluer progressivement l’outil.
+    </div>
 </div>
 
 </div>
