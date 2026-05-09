@@ -60,7 +60,7 @@ import streamlit as st
 
 st.set_page_config(
     layout="wide",
-    page_title="Tableau de bord artificialisation communale (V2.2.0)",
+    page_title="Tableau de bord artificialisation communale (V3.0.0)",
     page_icon="📊",
     initial_sidebar_state="expanded"
 )
@@ -99,7 +99,7 @@ def afficher_header():
     if logo_path.exists():
         st.image(str(logo_path), width=210)
     st.title("📊 Tableau de bord artificialisation communale & intercommunale.")
-    st.caption("Version 3.0.0| Auteur : Philippe PETIT")
+    st.caption("Version 3.0.0 - Version stable, millésime 2026 | Auteur : Philippe PETIT")
 
     #Bouton Aide
     with open("Aide.html", "rb") as f:
@@ -446,7 +446,7 @@ def main():
         elif valide and niveau == "epci":
             epci_df = ctx["communes"]      # toutes les communes de l’EPCI
             if st.button("📄 Générer le rapport PDF"):
-                with st.spinner("Veuillez patienter... Traitement du rapport en cours..."):
+                with st.spinner(f"Veuillez patienter... Traitement du rapport en cours..."):
                     pdf_bytes = generer_rapport_epci(epci_df, struct)
                 st.success("Rapport généré avec succès ! Vous pouvez maintenant le télécharger.")
 
