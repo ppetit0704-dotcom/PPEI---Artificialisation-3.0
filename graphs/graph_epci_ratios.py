@@ -92,6 +92,24 @@ def _graph_ratio_bar(values: dict, title: str, unit: str):
         height=420,
         margin=dict(l=120, r=20, t=60, b=40),
     )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
     return fig
 
 
@@ -133,6 +151,24 @@ def _graph_ratio_global(agg: dict):
         margin=dict(l=40, r=40, t=60, b=40),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
     return fig
 

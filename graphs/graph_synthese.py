@@ -116,6 +116,25 @@ def graph_barres_annuelles(donnees: dict) -> go.Figure:
         hovermode="x unified",
     )
 
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
+
     return fig
 
 
@@ -157,6 +176,24 @@ def graph_camembert(donnees: dict) -> go.Figure:
         font=dict(color="#CCCCCC"),
         legend=dict(orientation="v", x=1.0, y=0.5),
         margin=dict(l=20, r=20, t=60, b=20),
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
 
     return fig

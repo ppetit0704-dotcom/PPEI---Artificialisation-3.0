@@ -356,6 +356,25 @@ def graph_top10(df):
         margin=dict(l=120, r=60, t=50, b=40),
         yaxis=dict(autorange="reversed"),
     )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
+
     return fig
 
 
@@ -382,6 +401,24 @@ def graph_zan(df):
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=130, r=80, t=50, b=40),
         yaxis=dict(autorange="reversed"),
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
     return fig
 

@@ -265,6 +265,25 @@ def graph_flux_annuel(flux):
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )
+    
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
     fig.update_xaxes(tickmode="linear", dtick=1)
     return fig
 
@@ -286,6 +305,24 @@ def graph_donut_categories(totaux):
         title="Répartition par catégorie (tous flux disponibles)",
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
     return fig
 
@@ -316,6 +353,24 @@ def graph_jauge_zan(r):
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
     )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
     return fig
 
 
@@ -340,6 +395,24 @@ def graph_comparaison_rythmes(r):
         title="Rythme de consommation / habitant",
         yaxis_title="m² / habitant / an",
         paper_bgcolor="rgba(0,0,0,0)",
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
     return fig
 
@@ -393,6 +466,24 @@ def graph_projection_zan(r):
         height=360,
         margin=dict(t=60, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.02)
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
 
     fig.update_xaxes(tickmode="linear", dtick=1)
@@ -482,6 +573,25 @@ def rendu_ratios(code_insee):
             yaxis_title="ha",
             paper_bgcolor="rgba(0,0,0,0)"
         )
+
+        fig_hab.update_layout(
+            updatemenus=[
+                {
+                    "type": "buttons",
+                    "direction": "right",
+                    "x": 0.5,
+                    "y": -0.2,
+                    "showactive": False,
+                    "buttons": [
+                        {
+                            "label": "Vue d’ensemble",
+                            "method": "relayout",
+                            "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                        }
+                    ]
+                }
+            ]
+        )
         col_d.plotly_chart(fig_hab, use_container_width=True)
 
     # ───────────────────────────────────────────────────────────
@@ -503,6 +613,25 @@ def rendu_ratios(code_insee):
             yaxis_title="ha",
             paper_bgcolor="rgba(0,0,0,0)"
         )
+        fig_act.update_layout(
+            updatemenus=[
+                {
+                    "type": "buttons",
+                    "direction": "right",
+                    "x": 0.5,
+                    "y": -0.2,
+                    "showactive": False,
+                    "buttons": [
+                        {
+                            "label": "Vue d’ensemble",
+                            "method": "relayout",
+                            "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                        }
+                    ]
+                }
+            ]
+        )
+        
         st.plotly_chart(fig_act, use_container_width=True)
 
     # ───────────────────────────────────────────────────────────

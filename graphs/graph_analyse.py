@@ -335,6 +335,24 @@ def _build_figure(donnees, coeff_reduction):
         ),
         hovermode="x unified",
     )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
 
     return fig
 

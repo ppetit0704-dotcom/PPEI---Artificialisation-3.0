@@ -175,6 +175,24 @@ def _graph_barres(flux: dict) -> go.Figure:
         margin=dict(l=40, r=20, t=60, b=40),
         plot_bgcolor="rgba(0,0,0,0)",
     )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
     return fig
 
 
@@ -195,6 +213,24 @@ def _graph_donut(totaux_cat: dict) -> go.Figure:
         height=360,
         margin=dict(l=20, r=20, t=60, b=20),
         showlegend=False,
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
     return fig
 

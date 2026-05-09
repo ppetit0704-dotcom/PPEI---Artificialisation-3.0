@@ -95,6 +95,24 @@ def _graph_tendance(flux: dict) -> go.Figure:
         height=420,
         margin=dict(l=50, r=20, t=60, b=50),
     )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
+    )
     return fig
 
 
@@ -129,6 +147,24 @@ def _graph_rythmes(totaux_ref_cat, totaux_zan_cat):
         paper_bgcolor="rgba(0,0,0,0)",
         height=380,
         margin=dict(l=50, r=20, t=60, b=40),
+    )
+    fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "right",
+                "x": 0.5,
+                "y": -0.2,
+                "showactive": False,
+                "buttons": [
+                    {
+                        "label": "Vue d’ensemble",
+                        "method": "relayout",
+                        "args": [{"xaxis.autorange": True, "yaxis.autorange": True}]
+                    }
+                ]
+            }
+        ]
     )
     return fig
 
