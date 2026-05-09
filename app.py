@@ -93,21 +93,37 @@ def fmt_pct(valeur):
 # =====================================================
 # HEADER
 # =====================================================
-
 def afficher_header():
-    logo_path = ROOT_DIR / "assets" / "logo.png"
-    if logo_path.exists():
-        st.image(str(logo_path), width=210)
-    st.title("📊 Tableau de bord artificialisation communale & intercommunale.")
-    st.caption("Version 3.0.0 - Version stable, millésime 2026 | Auteur : Philippe PETIT")
+    col_logo, col_texte = st.columns([1, 4])
 
-    #Bouton Aide
-    with open("Aide.html", "rb") as f:
-        st.download_button(
-            "📥 Télécharger l'aide",
-            f,
-            file_name="Aide.html"
+    with col_logo:
+        logo_path = ROOT_DIR / "assets" / "logo.png"
+        if logo_path.exists():
+            st.image(str(logo_path), width=210)
+
+    with col_texte:
+        st.markdown(
+            """
+            <div style='margin-top:10px;'>
+                <h1 style='margin-bottom:0px;'>📊 Tableau de bord artificialisation communale & intercommunale</h1>
+                <div style='font-size:1rem; font-weight:600; color:orange; margin-top:6px;'>
+                    Version 3.0.0 — Version stable, millésime 2026<br>
+                    Auteur : Philippe PETIT — Assistants IA : Copilot, Claude & ChatGPT
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
+
+        # Bouton Aide premium
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        with open("Aide.html", "rb") as f:
+            st.download_button(
+                "📥 Télécharger l'aide",
+                f,
+                file_name="Aide.html",
+                type="primary"
+            )
 
 # =====================================================
 # ONGLET — GÉNÉRAL
